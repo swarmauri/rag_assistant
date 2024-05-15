@@ -395,11 +395,11 @@ def main():
     # If params then modify Assistant's config
     launch_kwargs = {}
     if args.share:
-        launch_kwargs.update({'share': share})
+        launch_kwargs.update({'share': args.share})
     if args.server_name:
-        launch_kwargs.update({'server_name': server_name})
+        launch_kwargs.update({'server_name': args.server_name})
     if args.favicon_path:
-        launch_kwargs.update({'favicon_path': favicon_path})
+        launch_kwargs.update({'favicon_path': args.favicon_path})
     else:
         launch_kwargs.update({'favicon_path': "./favicon-32x32.png"})
 
