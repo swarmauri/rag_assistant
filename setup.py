@@ -18,7 +18,8 @@ setup(
         ]
     },
     include_package_data=True,
-    install_requires=['swarmauri[full]==0.1.127'],
+    install_requires=['gradio',
+        'swarmauri[full]==0.1.127'],
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.10'
