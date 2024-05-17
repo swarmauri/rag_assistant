@@ -344,7 +344,7 @@ footer {
             self.load_button.click(self.load_and_filter_json, inputs=[self.file], outputs=self.data_frame)
             self.save_button.click(self.save_df, inputs=[self.data_frame])
 
-        with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
+        with gr.Blocks(css = self.css, title="Swarmauri Rag Agent") as self.app:
             gr.TabbedInterface(interface_list=[self.chat, self.retrieval_table, self.document_table], 
                                       tab_names=["chat", "retrieval", "documents"])
 
@@ -395,11 +395,11 @@ def main():
     # If params then modify Assistant's config
     launch_kwargs = {}
     if args.share:
-        launch_kwargs.update({'share': share})
+        launch_kwargs.update({'share': args.share})
     if args.server_name:
-        launch_kwargs.update({'server_name': server_name})
+        launch_kwargs.update({'server_name': args.server_name})
     if args.favicon_path:
-        launch_kwargs.update({'favicon_path': favicon_path})
+        launch_kwargs.update({'favicon_path': args.favicon_path})
     else:
         launch_kwargs.update({'favicon_path': "./favicon-32x32.png"})
 
