@@ -349,7 +349,11 @@ footer {
                                       tab_names=["chat", "retrieval", "documents"])
 
     
-    def launch(self, share: bool = False, server_name: Optional[str] = None, favicon_path: Optional[str] = None):
+    def launch(self, 
+        share: bool = False, 
+        server_name: Optional[str] = None, 
+        favicon_path: Optional[str] = None):
+
         kwargs = {}
         kwargs.update({'share': share})
         if server_name:
@@ -401,8 +405,10 @@ def main():
     if args.favicon_path:
         launch_kwargs.update({'favicon_path': args.favicon_path})
     else:
-        launch_kwargs.update({'favicon_path': "./favicon-32x32.png"})
+        launch_kwargs.update({'favicon_path': "favicon-32x32.png"})
 
+
+    assistant.initialize_agent()
     assistant.launch(**launch_kwargs)
         
 if __name__ == "__main__":
