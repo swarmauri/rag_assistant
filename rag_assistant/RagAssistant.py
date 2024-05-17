@@ -80,7 +80,7 @@ footer {
 }
 """
         self.favicon_path = "./favicon-32x32.png"
-        self.setup_gradio_interface()
+        
         
     def initialize_agent(self):
         VS = Doc2VecVectorStore()
@@ -304,7 +304,7 @@ footer {
                                 value="openai_gpt-3.5-turbo", 
                                 label="Model",
                                 info="Select openai model"),
-                    gr.Textbox(label="System Context", value=self.system_context or "You are a helpful assistant"),
+                    gr.Textbox(label="System Context", value = self.system_context),
                     gr.Checkbox(label="Fixed Retrieval", value=True, interactive=True),
                     gr.Slider(label="Top K", value=10, minimum=0, maximum=100, step=5, interactive=True),
                     gr.Slider(label="Temperature", value=1, minimum=0.0, maximum=1, step=0.01, interactive=True),
@@ -362,7 +362,7 @@ footer {
             kwargs.update({'server_name': server_name})
 
         kwargs.update({'favicon_path': self.favicon_path})
-
+        self.setup_gradio_interface()
         self.app.launch(**kwargs)
 
 
