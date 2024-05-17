@@ -79,6 +79,7 @@ footer {
     display: none !important;
 }
 """
+        self.favicon_path = "./favicon-32x32.png"
         self.setup_gradio_interface()
         
     def initialize_agent(self):
@@ -351,15 +352,16 @@ footer {
     
     def launch(self, 
         share: bool = False, 
-        server_name: Optional[str] = None, 
-        favicon_path: Optional[str] = None):
+        server_name: Optional[str] = None
+        #favicon_path: Optional[str] = None
+        ):
 
         kwargs = {}
         kwargs.update({'share': share})
         if server_name:
             kwargs.update({'server_name': server_name})
-        if favicon_path:
-            kwargs.update({'favicon_path': favicon_path})
+
+        kwargs.update({'favicon_path': self.favicon_path})
 
         self.app.launch(**kwargs)
 
@@ -373,7 +375,7 @@ def main():
     parser.add_argument('-db_path', '--db_path', type=str, help='path to sqlite3 db', required=False)
     parser.add_argument('-share', '--share', type=bool, help='Deploy a live app on gradio', required=False)
     parser.add_argument('-server_name', '--server_name', type=str, help='Server name', required=False)
-    parser.add_argument('-favicon_path', '--favicon_path', type=str, help='Path of applicaton favicon', required=False)
+    #parser.add_argument('-favicon_path', '--favicon_path', type=str, help='Path of application favicon', required=False)
     args = parser.parse_args()
 
 
@@ -402,10 +404,10 @@ def main():
         launch_kwargs.update({'share': args.share})
     if args.server_name:
         launch_kwargs.update({'server_name': args.server_name})
-    if args.favicon_path:
-        launch_kwargs.update({'favicon_path': args.favicon_path})
-    else:
-        launch_kwargs.update({'favicon_path': "favicon-32x32.png"})
+    #if args.favicon_path:
+        #launch_kwargs.update({'favicon_path': args.favicon_path})
+    #else:
+        #launch_kwargs.update({'favicon_path': "favicon-32x32.png"})
 
 
     assistant.initialize_agent()
