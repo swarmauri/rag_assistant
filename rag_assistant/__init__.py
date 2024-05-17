@@ -15,3 +15,4 @@ pip install rag_assistant==0.1.5 --user
 ! rag_assistant --api_key "YOUR API KEY" --db_path "E:\\swarmauri_github/prompt_responses.db" --system_context "You are a helpful assistant."
 ```
 """
+s

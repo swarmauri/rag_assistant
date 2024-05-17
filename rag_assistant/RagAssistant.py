@@ -64,7 +64,6 @@ class RagAssistant:
         self.document_table = []
         self.long_term_memory_df = None
         self.last_recall_df = None
-        self.agent = self.initialize_agent()
         self.set_model(model_name)
         self.css = """
 #chat-dialogue-container {
@@ -79,6 +78,7 @@ footer {
     display: none !important;
 }
 """
+        self.agent = self.initialize_agent()
         self.setup_gradio_interface()
         
     def initialize_agent(self):
