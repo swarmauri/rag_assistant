@@ -64,7 +64,6 @@ class RagAssistant:
         self.document_table = []
         self.long_term_memory_df = None
         self.last_recall_df = None
-        self.agent = self.initialize_agent()
         self.set_model(model_name)
         self.css = """
 #chat-dialogue-container {
@@ -79,6 +78,7 @@ footer {
     display: none !important;
 }
 """
+        self.agent = self.initialize_agent()
         self.setup_gradio_interface()
         
     def initialize_agent(self):
@@ -349,7 +349,11 @@ footer {
                                       tab_names=["chat", "retrieval", "documents"])
 
     
-    def launch(self, share: bool = False, server_name: Optional[str] = None, favicon_path: Optional[str] = None):
+    def launch(self, 
+        share: bool = False, 
+        server_name: Optional[str] = None, 
+        favicon_path: Optional[str] = None):
+    
         kwargs = {}
         kwargs.update({'share': share})
         if server_name:
@@ -403,6 +407,8 @@ def main():
     else:
         launch_kwargs.update({'favicon_path': "./favicon-32x32.png"})
 
+
+    assistant.initialize_agent()
     assistant.launch(**launch_kwargs)
         
 if __name__ == "__main__":
