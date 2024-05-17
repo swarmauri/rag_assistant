@@ -1,4 +1,4 @@
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 __short_desc__ = """The Swarmauri Rag Assistant is part of the swarmaURI framework."""
 __long_desc__ = """# Swarmauri Rag Assistant
 
@@ -7,7 +7,7 @@ The Swarmauri Rag Assistant
 
 ## Installation
 ```bash
-pip install rag_assistant==0.1.8 --user
+pip install rag_assistant==0.1.9 --user
 ```
 
 ## Execution

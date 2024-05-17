@@ -49,6 +49,7 @@ class RagAssistant:
                             'mistral_mistral-large-latest',
                             'openai_gpt-3.5-turbo',
                             'openai_gpt-3.5-turbo-16k',
+                            'openai_gpt-3.5-turbo-16k-0613',
                             'openai_gpt-4-0125-preview',
                             'openai_gpt-4o',
                             'google_gemini-1.5-pro-latest',
