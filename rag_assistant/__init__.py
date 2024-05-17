@@ -7,11 +7,11 @@ The Swarmauri Rag Assistant
 
 ## Installation
 ```bash
-pip install rag_assistant==0.1.1 --user
+pip install rag_assistant==0.1.3 --user
 ```
 
 ## Execution
 ```bash
-! rag_assistant --api_key "YOUR API KEY" --db_path "E:\\swarmauri_github/prompt_responses.db"
+! rag_assistant --api_key "YOUR API KEY" --db_path "E:\\swarmauri_github/prompt_responses.db" --system_context "You are a helpful assistant."
 ```
 """
