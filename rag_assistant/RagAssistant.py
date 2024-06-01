@@ -402,7 +402,6 @@ footer {
         self._show_documents_tab = show_documents_tab
         self._init_file_path = documents_file_path
         print('self._init_file_path', self._init_file_path)
-        self._load_and_filter_json(self._init_file_path)
         self.setup_gradio_interface()
 
 
