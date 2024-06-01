@@ -137,9 +137,11 @@ footer {
             self.agent.vector_store = MLMVectorStore()
         else:
             self.agent.vector_store = TFIDFVectorStore()
-            
     
-    def load_and_filter_json(self, filename):
+    def load_json_from_file_info(self, file_info):
+        self._load_and_filter_json(file_info.name)
+    
+    def _load_and_filter_json(self, filename):
         # Load JSON file using json library
         try:
             documents = load_documents_from_json_file(filename)
@@ -361,10 +363,10 @@ footer {
                 self.save_button = gr.Button("save")
                 
             self.vectorizer.change(self.change_vectorizer, inputs=[self.vectorizer], outputs=self.data_frame)
-            self.load_button.click(self.load_and_filter_json, inputs=[self.file.name], outputs=self.data_frame)
+            self.load_button.click(self.load_json_from_file_info, inputs=[self.file.name], outputs=self.data_frame)
             self.save_button.click(self.save_df, inputs=[self.data_frame])
             if self._init_file_path:
-                self.data_frame.value = self.load_and_filter_json(self.file.name)
+                self.data_frame.value = self._load_and_filter_json(self.file.name)
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
             print(self._show_documents_tab, type(self._show_documents_tab))
