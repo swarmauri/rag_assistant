@@ -139,10 +139,10 @@ footer {
             self.agent.vector_store = TFIDFVectorStore()
             
     
-    def load_and_filter_json(self, file_info):
+    def load_and_filter_json(self, filename):
         # Load JSON file using json library
         try:
-            documents = load_documents_from_json_file(file_info.name)
+            documents = load_documents_from_json_file(filename)
             self.agent.vector_store.documents = []
             self.agent.vector_store.add_documents(documents)
             self.long_term_memory_df = self.preprocess_documents(documents)
@@ -361,9 +361,10 @@ footer {
                 self.save_button = gr.Button("save")
                 
             self.vectorizer.change(self.change_vectorizer, inputs=[self.vectorizer], outputs=self.data_frame)
-            self.load_button.click(self.load_and_filter_json, inputs=[self.file], outputs=self.data_frame)
+            self.load_button.click(self.load_and_filter_json, inputs=[self.file.name], outputs=self.data_frame)
             self.save_button.click(self.save_df, inputs=[self.data_frame])
-            self.data_frame.value = self.load_and_filter_json(self.file)
+            if self._init_file_path:
+                self.data_frame.value = self.load_and_filter_json(self.file.name)
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
             print(self._show_documents_tab, type(self._show_documents_tab))
@@ -470,7 +471,7 @@ def main():
     if args.documents_file_path:
         launch_kwargs.update({'documents_file_path': args.documents_file_path})
 
-    if args.show_documents_tab:
+    if args.show_documents_tab == True:
         launch_kwargs.update({'show_documents_tab': args.show_documents_tab})
 
 
