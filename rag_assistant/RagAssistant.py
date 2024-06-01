@@ -94,7 +94,7 @@ footer {
         self._show_api_key = False
         self._show_provider_model = False
         self._show_system_context = False
-        
+        self._show_documents_tab = False
         
     def initialize_agent(self):
         VS = Doc2VecVectorStore()
@@ -363,16 +363,21 @@ footer {
             self.save_button.click(self.save_df, inputs=[self.data_frame])
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
-            gr.TabbedInterface(interface_list=[self.chat, self.retrieval_table, self.document_table], 
+            if self._show_documents_tab:
+                gr.TabbedInterface(interface_list=[self.chat, self.retrieval_table, self.document_table], 
                                       tab_names=["chat", "retrieval", "documents"])
-
+            else:
+                gr.TabbedInterface(interface_list=[self.chat], tab_names=["chat"])
     
     def launch(self, 
         share: bool = False, 
+
         show_api_key: bool = False,
         show_provider_model: bool = False,
         show_system_context: bool = False,
-        server_name: Optional[str] = None
+        show_documents_tab: bool = False,
+        server_name: Optional[str] = None,
+        documents_file_path: Optional[str] = None,
         ):
 
         kwargs = {}
@@ -383,9 +388,15 @@ footer {
         self._show_api_key = show_api_key
         self._show_provider_model = show_provider_model
         self._show_system_context = show_system_context
+        self._show_documents_tab = show_documents_tab
 
         kwargs.update({'favicon_path': self.favicon_path})
         self.setup_gradio_interface()
+
+        if documents_file_path:
+            self.data_frame = self.load_and_filter_json(documents_file_path)
+
+
         self.app.launch(**kwargs)
 
 
@@ -403,6 +414,10 @@ def main():
     parser.add_argument('-system_context', '--system_context', type=str, help='Assistants System Context', required=False)
     parser.add_argument('-show_system_context', '--show_system_context', 
         type=bool, help='Toggle displaying System Context on app', default=False, required=False)
+
+    parser.add_argument('-documents_file_path', '--documents_file_path', type=str, help='Filepath of Documents JSON', required=False)
+    parser.add_argument('-show_documents_tab', '--show_documents_tab', 
+        type=bool, help='Toggle displaying Document Tabs on app', default=False, required=False)
 
     parser.add_argument('-db_path', '--db_path', type=str, help='path to sqlite3 db', required=False)
     parser.add_argument('-share', '--share', type=bool, help='Deploy a live app on gradio', default=False, required=False)
@@ -443,6 +458,12 @@ def main():
         launch_kwargs.update({'show_provider_model': args.show_provider_model})
     if args.show_system_context:
         launch_kwargs.update({'show_system_context': args.show_system_context})
+
+    if args.documents_file_path:
+        launch_kwargs.update({'documents_file_path': args.documents_file_path})
+    if args.show_documents_tab:
+        launch_kwargs.update({'show_documents_tab': args.show_documents_tab})
+
 
     #if args.favicon_path:
         #launch_kwargs.update({'favicon_path': args.favicon_path})
