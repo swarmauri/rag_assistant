@@ -148,7 +148,7 @@ footer {
             self.long_term_memory_df = self.preprocess_documents(documents)
             return self.long_term_memory_df
         except json.JSONDecodeError:
-            error_fn("Invalid JSON file. Please check the file and try again.")
+            #error_fn("Invalid JSON file. Please check the file and try again.")
             return "Invalid JSON file. Please check the file and try again."
 
     def preprocess_documents(self, documents):
@@ -164,7 +164,7 @@ footer {
             df = pd.DataFrame.from_dict(docs)
             return df
         except Exception as e:
-            error_fn("preprocess_documents failed: {e}")
+            #error_fn("preprocess_documents failed: {e}")
             print(f"preprocess_documents: {e}")
 
     
@@ -289,7 +289,7 @@ footer {
                 
                 return "", self.last_recall_df, history
         except Exception as e:
-            error_fn(f"chatbot_function error: {e}")
+            #error_fn(f"chatbot_function error: {e}")
             self.agent.conversation._history.pop(0)
             print(f"chatbot_function error: {e}")
             return "", [], history
@@ -395,8 +395,8 @@ footer {
         kwargs.update({'favicon_path': self.favicon_path})
         self.setup_gradio_interface()
 
-        if documents_file_path:
-            self.data_frame = self._load_and_filter_json(documents_file_path)
+        #if documents_file_path:
+            #self.data_frame = self._load_and_filter_json(documents_file_path)
 
 
         self.app.launch(**kwargs)
