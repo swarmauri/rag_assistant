@@ -76,6 +76,7 @@ class RagAssistant:
         self.long_term_memory_df = None
         self.last_recall_df = None
         self.agent = self.initialize_agent()
+        self.model_name = model_name
         self.set_model(model_name)
         self.css = """
 #chat-dialogue-container {
@@ -126,6 +127,8 @@ footer {
                 self.model = AnthropicModel(api_key=self.api_key, model_name=model_name)
             
             self.agent.model = self.model
+
+            self.model_name = provider_model_choice
                 
         else:
             raise ValueError(f"Model name '{model_name}' is not supported. Choose from {self.allowed_models}")
@@ -321,7 +324,7 @@ footer {
                 self.additional_inputs = [
                     gr.Textbox(label="API Key", value=self.api_key or "Enter your API Key", visible=self._show_api_key),
                     gr.Dropdown(self.allowed_models, 
-                                value="openai_gpt-3.5-turbo", 
+                                value=self.model_name, 
                                 label="Model",
                                 info="Select openai model",
                                 visible=self._show_provider_model),
