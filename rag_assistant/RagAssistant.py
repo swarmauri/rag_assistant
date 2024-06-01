@@ -355,7 +355,7 @@ footer {
                 self.file = gr.File(label="Upload JSON File", value=self._init_file_path)
                 self.vectorizer = gr.Dropdown(choices=["Doc2Vec", "TFIDF", "MLM"], value="Doc2Vec", label="Select vectorizer")
                 self.load_button = gr.Button("load")
-            with gr.Row():c
+            with gr.Row():
                 self.data_frame = gr.Dataframe(interactive=True, wrap=True, line_breaks=True, elem_id="document-table-container", height="700")
             with gr.Row():
                 self.save_button = gr.Button("save")
