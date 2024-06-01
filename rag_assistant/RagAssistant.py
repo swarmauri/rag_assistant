@@ -362,15 +362,15 @@ footer {
                 
             self.vectorizer.change(self.change_vectorizer, inputs=[self.vectorizer], outputs=self.data_frame)
             self.load_button.click(self.load_and_filter_json, inputs=[self.file], outputs=self.data_frame)
-            #self.file.select(self.load_and_filter_json, inputs=[self.file], outputs=self.data_frame)
             self.save_button.click(self.save_df, inputs=[self.data_frame])
+            self.data_frame.value = self.load_and_filter_json(self.file)
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
             print(self._show_documents_tab, type(self._show_documents_tab))
 
             with gr.Tab("chat", visible=True):
                 self.chat.render()
-            with gr.Tab("retrieval", visible=self._show_documents_tab):
+            with gr.Tab("retrieval", visible=False):
                 self.retrieval_table.render()
             with gr.Tab("documents", visible=self._show_documents_tab):
                 self.document_table.render()
