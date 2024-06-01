@@ -363,10 +363,10 @@ footer {
                 self.save_button = gr.Button("save")
                 
             self.vectorizer.change(self.change_vectorizer, inputs=[self.vectorizer], outputs=self.data_frame)
-            self.load_button.click(self.load_json_from_file_info, inputs=[self.file.name], outputs=self.data_frame)
+            self.load_button.click(self.load_json_from_file_info, inputs=[self.file], outputs=self.data_frame)
             self.save_button.click(self.save_df, inputs=[self.data_frame])
             if self._init_file_path:
-                self.data_frame.value = self._load_and_filter_json(self.file.name)
+                self.data_frame.value = self._load_and_filter_json(self._init_file_path_)
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
             print(self._show_documents_tab, type(self._show_documents_tab))
