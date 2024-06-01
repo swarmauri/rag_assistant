@@ -423,9 +423,11 @@ def main():
         type=bool, help='Toggle displaying Document Tabs on app', default=False, required=False)
 
     parser.add_argument('-db_path', '--db_path', type=str, help='path to sqlite3 db', required=False)
+
     parser.add_argument('-share', '--share', type=bool, help='Deploy a live app on gradio', default=False, required=False)
     parser.add_argument('-server_name', '--server_name', type=str, help='Server name', required=False)
     #parser.add_argument('-favicon_path', '--favicon_path', type=str, help='Path of application favicon', required=False)
+    
     args = parser.parse_args()
 
 
