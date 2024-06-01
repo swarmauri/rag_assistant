@@ -369,10 +369,10 @@ footer {
     
     def launch(self, 
         share: bool = False, 
-        server_name: Optional[str] = None,
-        show_api_key: False,
-        show_provider_model: False,
-        show_system_context: False
+        show_api_key: bool = False,
+        show_provider_model: bool = False,
+        show_system_context: bool = False,
+        server_name: Optional[str] = None
         ):
 
         kwargs = {}
