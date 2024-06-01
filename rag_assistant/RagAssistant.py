@@ -366,11 +366,12 @@ footer {
             self.save_button.click(self.save_df, inputs=[self.data_frame])
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
-            if self._show_documents_tab:
-                gr.TabbedInterface(interface_list=[self.chat, self.retrieval_table, self.document_table], 
-                                      tab_names=["chat", "retrieval", "documents"])
-            else:
-                gr.TabbedInterface(interface_list=[self.chat], tab_names=["chat"])
+            with gr.Tab("chat"):
+                self.chat.render()
+            with gr.Tab("retrieval", visible=self._show_documents_tab):
+                self.retrieval_table.render()
+            with gr.Tab("documents", visible=self._show_documents_tab):
+                self.document_table.render()
     
     def launch(self, 
         share: bool = False, 
@@ -427,7 +428,7 @@ def main():
     parser.add_argument('-share', '--share', type=bool, help='Deploy a live app on gradio', default=False, required=False)
     parser.add_argument('-server_name', '--server_name', type=str, help='Server name', required=False)
     #parser.add_argument('-favicon_path', '--favicon_path', type=str, help='Path of application favicon', required=False)
-    
+
     args = parser.parse_args()
 
 
