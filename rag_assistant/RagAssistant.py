@@ -135,12 +135,14 @@ footer {
             self.agent.vector_store = MLMVectorStore()
         else:
             self.agent.vector_store = TFIDFVectorStore()
-            
-    
-    def load_and_filter_json(self, file_info):
+        
+    def load_json_from_file_info(self, file_info):
+        return self._load_and_filter_json(file_info.name)
+
+    def _load_and_filter_json(self, file_path):
         # Load JSON file using json library
         try:
-            documents = load_documents_from_json_file(file_info.name)
+            documents = load_documents_from_json_file(file_path)
             self.agent.vector_store.documents = []
             self.agent.vector_store.add_documents(documents)
             self.long_term_memory_df = self.preprocess_documents(documents)
@@ -359,7 +361,7 @@ footer {
                 self.save_button = gr.Button("save")
                 
             self.vectorizer.change(self.change_vectorizer, inputs=[self.vectorizer], outputs=self.data_frame)
-            self.load_button.click(self.load_and_filter_json, inputs=[self.file], outputs=self.data_frame)
+            self.load_button.click(self.load_json_from_file_info, inputs=[self.file], outputs=self.data_frame)
             self.save_button.click(self.save_df, inputs=[self.data_frame])
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
@@ -394,7 +396,7 @@ footer {
         self.setup_gradio_interface()
 
         if documents_file_path:
-            self.data_frame = self.load_and_filter_json(documents_file_path)
+            self.data_frame = self._load_and_filter_json(documents_file_path)
 
 
         self.app.launch(**kwargs)
