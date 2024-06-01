@@ -1,4 +1,5 @@
 from datetime import datetime
+import uuid
 import sqlite3
 import gradio as gr
 import pandas as pd
@@ -71,6 +72,7 @@ class RagAssistant:
                             'anthropic_claude-3-haiku-20240307'])
             
         self.model = None
+        self.chat_idx = {}
         self.retrieval_table = []
         self.document_table = []
         self.long_term_memory_df = None
@@ -231,19 +233,14 @@ footer {
             documents.append(document)
         return documents
         
-    def clear_chat(self):
+    def clear_chat(self, chat_id):
         # We could clear, but if we create a new instance, we get a new conversation id
-        max_size = self.agent.conversation.max_size
-        session_cache_size = self.agent.conversation.session_cache_max_size
-        self.conversation = SessionCacheConversation(max_size=max_size, 
-                                                     system_message_content="", 
-                                                     session_cache_max_size=session_cache_size)
-        self.agent.conversation = self.conversation
-        return "", [], []    
+        del self.chat_idx[chat_id]
+        return chat_id, "", [], []    
         
     async def chatbot_function(self, 
+                         chat_id, 
                          message, 
-                         history, 
                          api_key: str = None, 
                          model_name: str = None, 
                          system_context: str = None, 
@@ -254,50 +251,56 @@ footer {
                          conversation_size: int = 2,
                          session_cache_size: int = 2):
         try:
+            if not chat_id:
+                chat_id = str(uuid.uuid4())
             start_datetime = datetime.now()
-            if self.agent.vector_store.document_count() == 0:
-                return "", [], [(message, "⚠️ Add Documents First")]
-            else:
+                
+                
+            # Set additional parameters
+            self.api_key = api_key
+            self.set_model(model_name)
 
-                
-                
-                # Set additional parameters
-                self.api_key = api_key
-                self.set_model(model_name)
+
+            # Set Conversation Size
+            self.agent.system_context = system_context
+            
+            if chat_id not in self.chat_idx:
+                self.chat_idx[chat_id] = SessionCacheConversation(max_size=conversation_size, 
+                                                     system_message_content=system_context, 
+                                                     session_cache_max_size=session_cache_size)
+
+
+            self.agent.conversation = self.chat_idx[chat_id]
+            
+            # Predict
+            try:
+                response = self.agent.exec(message, 
+                                           top_k=top_k, 
+                                           fixed=fixed_retrieval,
+                                           model_kwargs={'temperature': temperature, 'max_tokens': max_tokens})
+            except Exception as e:
+                print(f"chatbot_function agent error: {e}")
                 
 
-                # Set Conversation Size
-                self.agent.system_context = system_context
-                self.agent.conversation.max_size = conversation_size
-                self.agent.conversation.session_cache_max_size = session_cache_size
-                
-                # Predict
-                try:
-                    response = self.agent.exec(message, 
-                                               top_k=top_k, 
-                                               fixed=fixed_retrieval,
-                                               model_kwargs={'temperature': temperature, 'max_tokens': max_tokens})
-                except Exception as e:
-                    print(f"chatbot_function agent error: {e}")
-                    
-    
-                # Update Retrieval Document Table
-                self.last_recall_df = self.preprocess_documents(self.agent.last_retrieved)
-                
-                # Get History
-                history = [each['content'] for each in self.agent.conversation.session_to_dict()]
-                history = [(history[i], history[i+1]) for i in range(0, len(history), 2)]
+            # Update Retrieval Document Table
+            self.last_recall_df = self.preprocess_documents(self.agent.last_retrieved)
+            
 
-                # SQL Log
-                end_datetime = datetime.now()
-                self.sql_log(self.agent.conversation.id, model_name, message, response, start_datetime, end_datetime)
-                
-                return "", self.last_recall_df, history
+            # Get History
+
+            history = [each['content'] for each in self.agent.conversation.session_to_dict()]
+            history = [(history[i], history[i+1]) for i in range(0, len(history), 2)]
+
+            # SQL Log
+            end_datetime = datetime.now()
+            self.sql_log(self.agent.conversation.id, model_name, message, response, start_datetime, end_datetime)
+            
+            return chat_id, "", self.last_recall_df, history
         except Exception as e:
             error_fn(f"chatbot_function error: {e}")
             self.agent.conversation._history.pop(0)
             print(f"chatbot_function error: {e}")
-            return "", [], history
+            return chat_id, "", [], history
     
 
         
@@ -309,7 +312,8 @@ footer {
         
         with gr.Blocks(css = self.css) as self.chat:
             with gr.Row():
-                self.chat_history = gr.Chatbot(label="Chat History", 
+                chat_id = gr.State(None)
+                self.chatbot = gr.Chatbot(label="Chat History", 
                                            layout="panel", 
                                            elem_id="chat-dialogue-container", 
                                            container=True, 
@@ -338,20 +342,20 @@ footer {
                 ]
     
     
-            submit_inputs = [self.input_box, self.chat_history]
+            submit_inputs = [chat_id, self.input_box]
             submit_inputs.extend(self.additional_inputs)
             # Function to handle sending messages
             self.send_button.click(
                 self.chatbot_function, 
                 inputs=submit_inputs, 
-                outputs=[self.input_box, self.retrieval_table, self.chat_history]
+                outputs=[chat_id, self.input_box, self.retrieval_table, self.chatbot]
             )
         
             # Function to handle clearing the chat
             self.clear_button.click(
                 self.clear_chat, 
-                inputs=[], 
-                outputs=[self.input_box, self.retrieval_table, self.chat_history]
+                inputs=[chat_id], 
+                outputs=[chat_id, self.input_box, self.retrieval_table, self.chatbot]
             )
 
         
@@ -388,7 +392,6 @@ footer {
     
     def launch(self, 
         share: bool = False, 
-
         show_api_key: bool = False,
         show_provider_model: bool = False,
         show_system_context: bool = False,
