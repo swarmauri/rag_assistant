@@ -41,8 +41,7 @@ class RagAssistant:
                  api_key: str = "", 
                  system_context: str = "You are a helpful assistant.",
                  model_name = "openai_gpt-4o",
-                 db_path='prompt_responses.db',
-                 document_file_path = Optional[str] = None):
+                 db_path='prompt_responses.db'):
         print('Initializing... this will take a moment.')
         self.system_context = system_context
         self.api_key = api_key
