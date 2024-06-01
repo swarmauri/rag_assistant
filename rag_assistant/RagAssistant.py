@@ -95,7 +95,7 @@ footer {
         self._show_provider_model = False
         self._show_system_context = False
         self._show_documents_tab = False
-        self._init_file_path = document_file_path
+        self._init_file_path = None
 
 
     def initialize_agent(self):
