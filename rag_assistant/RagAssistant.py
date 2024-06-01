@@ -26,6 +26,15 @@ from swarmauri.standard.messages.concrete import (HumanMessage,
                                                   AgentMessage)
 from swarmauri.standard.utils.load_documents_from_json import load_documents_from_json_file
 
+def info_fn(msg):
+    gr.Info(msg)
+
+def error_fn(msg):
+    raise gr.Error(msg)
+
+def warning_fn(msg):
+    gr.Warning(msg)
+
 class RagAssistant:
     def __init__(self, 
                  api_key: str = "", 
@@ -133,6 +142,7 @@ footer {
             self.long_term_memory_df = self.preprocess_documents(documents)
             return self.long_term_memory_df
         except json.JSONDecodeError:
+            error_fn("Invalid JSON file. Please check the file and try again.")
             return "Invalid JSON file. Please check the file and try again."
 
     def preprocess_documents(self, documents):
@@ -148,6 +158,7 @@ footer {
             df = pd.DataFrame.from_dict(docs)
             return df
         except Exception as e:
+            error_fn("preprocess_documents failed: {e}")
             print(f"preprocess_documents: {e}")
 
     
@@ -272,7 +283,7 @@ footer {
                 
                 return "", self.last_recall_df, history
         except Exception as e:
-            gr.Error(f"{e}")
+            error_fn(f"chatbot_function error: {e}")
             self.agent.conversation._history.pop(0)
             print(f"chatbot_function error: {e}")
             return "", [], history
