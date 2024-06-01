@@ -358,16 +358,20 @@ footer {
                 self.vectorizer = gr.Dropdown(choices=["Doc2Vec", "TFIDF", "MLM"], value="Doc2Vec", label="Select vectorizer")
                 self.load_button = gr.Button("load")
             with gr.Row():
-                self.data_frame = gr.Dataframe(interactive=True, wrap=True, line_breaks=True, elem_id="document-table-container", height="700")
+                if self._init_file_path:
+                    df = self._load_and_filter_json(self._init_file_path)
+                self.data_frame = gr.Dataframe(interactive=True, 
+                    wrap=True, 
+                    line_breaks=True, 
+                    elem_id="document-table-container", 
+                    height="700", 
+                    value=df)
             with gr.Row():
                 self.save_button = gr.Button("save")
                 
             self.vectorizer.change(self.change_vectorizer, inputs=[self.vectorizer], outputs=self.data_frame)
             self.load_button.click(self.load_json_from_file_info, inputs=[self.file], outputs=self.data_frame)
             self.save_button.click(self.save_df, inputs=[self.data_frame])
-            print('self._init_file_path', self._init_file_path)
-            if self._init_file_path:
-                self.data_frame.value = self._load_and_filter_json(self._init_file_path)
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
             print(self._show_documents_tab, type(self._show_documents_tab))
@@ -398,6 +402,7 @@ footer {
         self._show_documents_tab = show_documents_tab
         self._init_file_path = documents_file_path
         print('self._init_file_path', self._init_file_path)
+        self._load_and_filter_json(self._init_file_path)
         self.setup_gradio_interface()
 
 
