@@ -91,6 +91,9 @@ footer {
 }
 """
         self.favicon_path = "./favicon-32x32.png"
+        self._show_api_key = False
+        self._show_provider_model = False
+        self._show_system_context = False
         
         
     def initialize_agent(self):
@@ -312,12 +315,13 @@ footer {
                 
             with gr.Accordion("See Details", open=False):
                 self.additional_inputs = [
-                    gr.Textbox(label="API Key", value=self.api_key or "Enter your API Key"),
+                    gr.Textbox(label="API Key", value=self.api_key or "Enter your API Key", visible=self._show_api_key),
                     gr.Dropdown(self.allowed_models, 
                                 value="openai_gpt-3.5-turbo", 
                                 label="Model",
-                                info="Select openai model"),
-                    gr.Textbox(label="System Context", value = self.system_context),
+                                info="Select openai model",
+                                visible=self._show_provider_model),
+                    gr.Textbox(label="System Context", value = self.system_context, visible=self._show_system_context),
                     gr.Checkbox(label="Fixed Retrieval", value=True, interactive=True),
                     gr.Slider(label="Top K", value=10, minimum=0, maximum=100, step=5, interactive=True),
                     gr.Slider(label="Temperature", value=1, minimum=0.0, maximum=1, step=0.01, interactive=True),
@@ -365,14 +369,20 @@ footer {
     
     def launch(self, 
         share: bool = False, 
-        server_name: Optional[str] = None
-        #favicon_path: Optional[str] = None
+        server_name: Optional[str] = None,
+        show_api_key: False,
+        show_provider_model: False,
+        show_system_context: False
         ):
 
         kwargs = {}
         kwargs.update({'share': share})
         if server_name:
             kwargs.update({'server_name': server_name})
+
+        self._show_api_key = show_api_key
+        self._show_provider_model = show_provider_model
+        self._show_system_context = show_system_context
 
         kwargs.update({'favicon_path': self.favicon_path})
         self.setup_gradio_interface()
@@ -383,10 +393,19 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Swarmauri Developer Assistant Command Line Tool")
     parser.add_argument('-api_key', '--api_key', type=str, help='Your api key', required=True)
+    parser.add_argument('-show_api_key', '--show_api_key', 
+        type=bool, help='Toggle displaying api key on app', default=False, required=False)
+
     parser.add_argument('-provider_model', '--provider_model', type=str, help='Your provider model', required=False)
+    parser.add_argument('-show_provider_model', '--show_provider_model', 
+        type=bool, help='Toggle displaying Provider Model on app', default=False, required=False)
+
     parser.add_argument('-system_context', '--system_context', type=str, help='Assistants System Context', required=False)
+    parser.add_argument('-show_system_context', '--show_system_context', 
+        type=bool, help='Toggle displaying System Context on app', default=False, required=False)
+
     parser.add_argument('-db_path', '--db_path', type=str, help='path to sqlite3 db', required=False)
-    parser.add_argument('-share', '--share', type=bool, help='Deploy a live app on gradio', required=False)
+    parser.add_argument('-share', '--share', type=bool, help='Deploy a live app on gradio', default=False, required=False)
     parser.add_argument('-server_name', '--server_name', type=str, help='Server name', required=False)
     #parser.add_argument('-favicon_path', '--favicon_path', type=str, help='Path of application favicon', required=False)
     args = parser.parse_args()
@@ -417,6 +436,14 @@ def main():
         launch_kwargs.update({'share': args.share})
     if args.server_name:
         launch_kwargs.update({'server_name': args.server_name})
+
+    if args.show_api_key:
+        launch_kwargs.update({'show_api_key': args.show_api_key})
+    if args.show_provider_model:
+        launch_kwargs.update({'show_provider_model': args.show_provider_model})
+    if args.show_system_context:
+        launch_kwargs.update({'show_system_context': args.show_system_context})
+
     #if args.favicon_path:
         #launch_kwargs.update({'favicon_path': args.favicon_path})
     #else:
