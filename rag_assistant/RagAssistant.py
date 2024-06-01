@@ -148,7 +148,7 @@ footer {
             self.long_term_memory_df = self.preprocess_documents(documents)
             return self.long_term_memory_df
         except json.JSONDecodeError:
-            error_fn("Invalid JSON file. Please check the file and try again.")
+            #error_fn("Invalid JSON file. Please check the file and try again.")
             return "Invalid JSON file. Please check the file and try again."
 
     def preprocess_documents(self, documents):
@@ -164,7 +164,7 @@ footer {
             df = pd.DataFrame.from_dict(docs)
             return df
         except Exception as e:
-            error_fn("preprocess_documents failed: {e}")
+            #error_fn("preprocess_documents failed: {e}")
             print(f"preprocess_documents: {e}")
 
     
@@ -289,7 +289,7 @@ footer {
                 
                 return "", self.last_recall_df, history
         except Exception as e:
-            error_fn(f"chatbot_function error: {e}")
+            #error_fn(f"chatbot_function error: {e}")
             self.agent.conversation._history.pop(0)
             print(f"chatbot_function error: {e}")
             return "", [], history
@@ -362,6 +362,7 @@ footer {
                 
             self.vectorizer.change(self.change_vectorizer, inputs=[self.vectorizer], outputs=self.data_frame)
             self.load_button.click(self.load_and_filter_json, inputs=[self.file], outputs=self.data_frame)
+            self.file.select(self.load_and_filter_json, inputs=[self.file], outputs=self.data_frame)
             self.save_button.click(self.save_df, inputs=[self.data_frame])
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
@@ -397,7 +398,7 @@ footer {
         kwargs.update({'share': share})
         if server_name:
             kwargs.update({'server_name': server_name})
-        kwargs.update({'favicon_path': self.favicon_path})
+        #kwargs.update({'favicon_path': self.favicon_path})
 
         self.app.launch(**kwargs)
 
@@ -463,6 +464,7 @@ def main():
 
     if args.documents_file_path:
         launch_kwargs.update({'documents_file_path': args.documents_file_path})
+
     if args.show_documents_tab:
         launch_kwargs.update({'show_documents_tab': args.show_documents_tab})
 
