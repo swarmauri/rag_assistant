@@ -150,7 +150,7 @@ footer {
             self.long_term_memory_df = self.preprocess_documents(documents)
             return self.long_term_memory_df
         except json.JSONDecodeError:
-            #error_fn("Invalid JSON file. Please check the file and try again.")
+            error_fn("Invalid JSON file. Please check the file and try again.")
             return "Invalid JSON file. Please check the file and try again."
 
     def preprocess_documents(self, documents):
@@ -166,7 +166,7 @@ footer {
             df = pd.DataFrame.from_dict(docs)
             return df
         except Exception as e:
-            #error_fn("preprocess_documents failed: {e}")
+            error_fn("preprocess_documents failed: {e}")
             print(f"preprocess_documents: {e}")
 
     
@@ -261,7 +261,7 @@ footer {
                 # Set additional parameters
                 self.api_key = api_key
                 self.set_model(model_name)
-                #print(self.model, self.model.model_name, self.api_key)
+                
 
                 # Set Conversation Size
                 self.agent.system_context = system_context
@@ -291,7 +291,7 @@ footer {
                 
                 return "", self.last_recall_df, history
         except Exception as e:
-            #error_fn(f"chatbot_function error: {e}")
+            error_fn(f"chatbot_function error: {e}")
             self.agent.conversation._history.pop(0)
             print(f"chatbot_function error: {e}")
             return "", [], history
@@ -374,7 +374,7 @@ footer {
             self.save_button.click(self.save_df, inputs=[self.data_frame])
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
-            print(self._show_documents_tab, type(self._show_documents_tab))
+            
 
             with gr.Tab("chat", visible=True):
                 self.chat.render()
@@ -401,7 +401,6 @@ footer {
         self._show_system_context = show_system_context
         self._show_documents_tab = show_documents_tab
         self._init_file_path = documents_file_path
-        print('self._init_file_path', self._init_file_path)
         self.setup_gradio_interface()
 
 
