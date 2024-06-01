@@ -41,7 +41,8 @@ class RagAssistant:
                  api_key: str = "", 
                  system_context: str = "You are a helpful assistant.",
                  model_name = "openai_gpt-4o",
-                 db_path='prompt_responses.db'):
+                 db_path='prompt_responses.db',
+                 document_file_path = Optional[str] = None):
         print('Initializing... this will take a moment.')
         self.system_context = system_context
         self.api_key = api_key
@@ -95,7 +96,9 @@ footer {
         self._show_provider_model = False
         self._show_system_context = False
         self._show_documents_tab = False
-        
+        self._init_file_path = document_file_path
+
+
     def initialize_agent(self):
         VS = Doc2VecVectorStore()
         agent = RagAgent(name="Rag", 
@@ -135,20 +138,18 @@ footer {
             self.agent.vector_store = MLMVectorStore()
         else:
             self.agent.vector_store = TFIDFVectorStore()
-        
-    def load_json_from_file_info(self, file_info):
-        return self._load_and_filter_json(file_info.name)
-
-    def _load_and_filter_json(self, file_path):
+            
+    
+    def load_and_filter_json(self, file_info):
         # Load JSON file using json library
         try:
-            documents = load_documents_from_json_file(file_path)
+            documents = load_documents_from_json_file(file_info.name)
             self.agent.vector_store.documents = []
             self.agent.vector_store.add_documents(documents)
             self.long_term_memory_df = self.preprocess_documents(documents)
             return self.long_term_memory_df
         except json.JSONDecodeError:
-            #error_fn("Invalid JSON file. Please check the file and try again.")
+            error_fn("Invalid JSON file. Please check the file and try again.")
             return "Invalid JSON file. Please check the file and try again."
 
     def preprocess_documents(self, documents):
@@ -164,7 +165,7 @@ footer {
             df = pd.DataFrame.from_dict(docs)
             return df
         except Exception as e:
-            #error_fn("preprocess_documents failed: {e}")
+            error_fn("preprocess_documents failed: {e}")
             print(f"preprocess_documents: {e}")
 
     
@@ -289,7 +290,7 @@ footer {
                 
                 return "", self.last_recall_df, history
         except Exception as e:
-            #error_fn(f"chatbot_function error: {e}")
+            error_fn(f"chatbot_function error: {e}")
             self.agent.conversation._history.pop(0)
             print(f"chatbot_function error: {e}")
             return "", [], history
@@ -352,7 +353,7 @@ footer {
         
         with gr.Blocks(css = self.css) as self.document_table:
             with gr.Row():
-                self.file = gr.File(label="Upload JSON File")
+                self.file = gr.File(label="Upload JSON File", value=self._init_file_path)
                 self.vectorizer = gr.Dropdown(choices=["Doc2Vec", "TFIDF", "MLM"], value="Doc2Vec", label="Select vectorizer")
                 self.load_button = gr.Button("load")
             with gr.Row():
@@ -361,7 +362,7 @@ footer {
                 self.save_button = gr.Button("save")
                 
             self.vectorizer.change(self.change_vectorizer, inputs=[self.vectorizer], outputs=self.data_frame)
-            self.load_button.click(self.load_json_from_file_info, inputs=[self.file], outputs=self.data_frame)
+            self.load_button.click(self.load_and_filter_json, inputs=[self.file], outputs=self.data_frame)
             self.save_button.click(self.save_df, inputs=[self.data_frame])
 
         with gr.Blocks(css = self.css, title="Swarmauri Rag Agent", head=head) as self.app:
@@ -382,22 +383,22 @@ footer {
         documents_file_path: Optional[str] = None,
         ):
 
-        kwargs = {}
-        kwargs.update({'share': share})
-        if server_name:
-            kwargs.update({'server_name': server_name})
 
+        # Create interfaces
         self._show_api_key = show_api_key
         self._show_provider_model = show_provider_model
         self._show_system_context = show_system_context
         self._show_documents_tab = show_documents_tab
-
-        kwargs.update({'favicon_path': self.favicon_path})
+        self._init_file_path = documents_file_path
         self.setup_gradio_interface()
 
-        #if documents_file_path:
-            #self.data_frame = self._load_and_filter_json(documents_file_path)
 
+        # Deploy interfaces
+        kwargs = {}
+        kwargs.update({'share': share})
+        if server_name:
+            kwargs.update({'server_name': server_name})
+        kwargs.update({'favicon_path': self.favicon_path})
 
         self.app.launch(**kwargs)
 
