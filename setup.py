@@ -18,7 +18,7 @@ setup(
         ]
     },
     include_package_data=True,
-    install_requires=['gradio',
+    install_requires=['gradio==4.26.0',
         'swarmauri[full]==0.2.5'],
     classifiers=[
         'License :: OSI Approved :: MIT License',
