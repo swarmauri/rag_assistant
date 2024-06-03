@@ -235,7 +235,10 @@ footer {
         
     def clear_chat(self, chat_id):
         # We could clear, but if we create a new instance, we get a new conversation id
-        del self.chat_idx[chat_id]
+        try:
+            del self.chat_idx[chat_id]
+        except KeyError:
+            pass
         return chat_id, "", [], []    
         
     async def chatbot_function(self, 
