@@ -369,13 +369,20 @@ footer {
                 self.load_button = gr.Button("load")
             with gr.Row():
                 if self._init_file_path:
-                    df = self._load_and_filter_json(self._init_file_path)
-                self.data_frame = gr.Dataframe(interactive=True, 
-                    wrap=True, 
-                    line_breaks=True, 
-                    elem_id="document-table-container", 
-                    height="700", 
-                    value=df)
+                    self._load_and_filter_json(self._init_file_path)
+                if self.long_term_memory_df:
+                    self.data_frame = gr.Dataframe(interactive=True, 
+                        wrap=True, 
+                        line_breaks=True, 
+                        elem_id="document-table-container", 
+                        height="700", 
+                        value=self.long_term_memory_df)
+                else:
+                    self.data_frame = gr.Dataframe(interactive=True, 
+                        wrap=True, 
+                        line_breaks=True, 
+                        elem_id="document-table-container", 
+                        height="700")
             with gr.Row():
                 self.save_button = gr.Button("save")
                 
@@ -426,7 +433,7 @@ footer {
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Swarmauri Developer Assistant Command Line Tool")
-    parser.add_argument('-api_key', '--api_key', type=str, help='Your api key', required=True)
+    parser.add_argument('-api_key', '--api_key', type=str, help='Your api key', required=False)
     parser.add_argument('-show_api_key', '--show_api_key', 
         type=bool, help='Toggle displaying api key on app', default=False, required=False)
 
@@ -451,7 +458,10 @@ def main():
     args = parser.parse_args()
 
 
-    api_key = args.api_key
+    if args.api_key:
+        api_key = args.api_key
+    else:
+        api_key = ""
     
 
     # Create Assistant
