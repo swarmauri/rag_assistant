@@ -371,7 +371,7 @@ footer {
             with gr.Row():
                 if self._init_file_path:
                     self._load_and_filter_json(self._init_file_path)
-                if self.long_term_memory_df:
+                if not self.long_term_memory_df.empty:
                     self.data_frame = gr.Dataframe(interactive=True, 
                         wrap=True, 
                         line_breaks=True, 
