@@ -292,7 +292,8 @@ footer {
             # Get History
 
             history = [each['content'] for each in self.agent.conversation.session_to_dict()]
-            history = [(history[i], history[i+1]) for i in range(0, len(history), 2)]
+            if len(history) > 0:
+                history = [(history[i], history[i+1]) for i in range(0, len(history), 2)]
 
             # SQL Log
             end_datetime = datetime.now()
