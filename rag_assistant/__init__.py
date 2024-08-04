@@ -1,4 +1,4 @@
-__version__ = "0.1.22"
+__version__ = "0.1.23"
 __short_desc__ = """The Swarmauri Rag Assistant is part of the Swarmauri framework."""
 __long_desc__ = f"""# Swarmauri Rag Assistant
 

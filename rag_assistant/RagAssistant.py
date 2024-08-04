@@ -75,8 +75,8 @@ class RagAssistant:
         self.chat_idx = {}
         self.retrieval_table = []
         self.document_table = []
-        self.long_term_memory_df = None
-        self.last_recall_df = None
+        self.long_term_memory_df = pd.DataFrame([])
+        self.last_recall_df = pd.DataFrame([])
         self.agent = self.initialize_agent()
         self.model_name = model_name
         self.set_model(model_name)
