@@ -42,7 +42,7 @@ class RagAssistant:
         self,
         api_key: str,
         llm: str,
-        vectorstore=Doc2VecVectorStore,
+        vectorstore="Doc2Vec",
         model_name: str = None,
         system_context: str = "You are a helpful assistant.",
         db_path: str = "prompt_responses.db",
@@ -67,9 +67,10 @@ class RagAssistant:
 
         # initialize attr with params
         self.system_context = SystemMessage(content=system_context)
+        self.vectorstore = Doc2VecVectorStore
         self.api_key = api_key
         self.db_path = db_path
-        self.vectorstore = vectorstore
+
         self.conversation = SessionCacheConversation(
             max_size=2, system_context=self.system_context
         )
@@ -84,6 +85,7 @@ class RagAssistant:
         self.agent = self.initialize_agent()
         self.model_name = model_name
         self.set_model(model_name)
+        self.set_vectorizer(vectorstore)
 
         self.css = """
 #chat-dialogue-container {
@@ -140,15 +142,15 @@ footer {
         self.model_name = provider_model_choice
         self.llm.name = self.model_name
 
-    def change_vectorizer(self, vectorizer: str):
+    def set_vectorizer(self, vectorizer: str):
         chosen_vectorizer = self.available_vectorizers.get(vectorizer, None)
 
         if chosen_vectorizer is None:
             raise ValueError(
                 f"Vectorizer '{vectorizer}' is not supported. Choose from {self.available_vectorizers.keys()}"
             )
-
-        self.agent.vector_store = chosen_vectorizer()
+        self.vector_store = chosen_vectorizer
+        self.agent.vector_store = self.vector_store
 
     def load_json_from_file_info(self, file_info):
         self._load_and_filter_json(file_info.name)
@@ -210,7 +212,7 @@ footer {
             pass
         return chat_id, "", [], []
 
-    async def chatbot_function(
+    def chatbot_function(
         self,
         chat_id,
         message,
