@@ -10,7 +10,7 @@ from swarmauri.conversations.concrete.SessionCacheConversation import (
     SessionCacheConversation,
 )
 from swarmauri.documents.concrete import Document
-from swarmauri.llms.concrete import AnthropicModel
+from swarmauri.llms.concrete.AnthropicModel import AnthropicModel
 from swarmauri.llms.concrete import GeminiProModel
 from swarmauri.llms.concrete import GroqModel
 from swarmauri.llms.concrete import MistralModel
@@ -28,8 +28,9 @@ class RagAssistant:
     def __init__(
         self,
         api_key: str,
+        llm: str,
         model_name: str,
-        vectorstore = Doc2VecVectorStore,
+        vectorstore=Doc2VecVectorStore,
         system_context: str = "You are a helpful assistant.",
         db_path: str = "prompt_responses.db",
     ):
@@ -42,7 +43,16 @@ class RagAssistant:
             max_size=2, system_message_content=self.system_context
         )
 
-        self.model = None
+        self.available_llms = {
+            "groq": GroqModel,
+            "mistral": MistralModel,
+            "openai": OpenAIModel,
+            "google": GeminiProModel,
+            "anthropic": AnthropicModel,
+        }
+        self.llm_str = llm
+        self.llm = self.set_llm(self.llm_str)
+
         self.chat_idx = {}
         self.retrieval_table = []
         self.document_table = []
@@ -51,6 +61,7 @@ class RagAssistant:
         self.agent = self.initialize_agent()
         self.model_name = model_name
         self.set_model(model_name)
+
         self.css = """
 #chat-dialogue-container {
     min-height: 54vh !important;
@@ -82,33 +93,33 @@ footer {
         )
         return agent
 
-    # TODO: update method to much playground implementation 
-    def set_model(self, provider_model_choice: str):
-        if provider_model_choice in self.allowed_models:
-            provider, model_name = provider_model_choice.split("_")
-            if provider == "groq":
-                self.model = GroqModel(api_key=self.api_key, model_name=model_name)
+    def get_allowed_models(self):
+        chosen_llm = self.available_llms.get(self.llm_str, None)
 
-            if provider == "mistral":
-                self.model = MistralModel(api_key=self.api_key, model_name=model_name)
-
-            if provider == "openai":
-                self.model = OpenAIModel(api_key=self.api_key, model_name=model_name)
-
-            if provider == "google":
-                self.model = GeminiProModel(api_key=self.api_key, model_name=model_name)
-
-            if provider == "anthropic":
-                self.model = AnthropicModel(api_key=self.api_key, model_name=model_name)
-
-            self.agent.model = self.model
-
-            self.model_name = provider_model_choice
-
-        else:
+        if chosen_llm is None:
             raise ValueError(
-                f"Model name '{model_name}' is not supported. Choose from {self.allowed_models}"
+                f"LLM '{self.llm_str}' is not supported. Choose from {self.available_llms.keys()}"
             )
+
+        return chosen_llm.allowed_models
+
+    def set_llm(self, llm: str, **kwargs):
+        """Set the LLM to use for the assistant"""
+        chosen_llm = self.available_llms.get(llm, None)
+
+        if chosen_llm is None:
+            raise ValueError(
+                f"LLM '{llm}' is not supported. Choose from {self.available_llms.keys()}"
+            )
+
+        return chosen_llm(api_key=self.api_key, **kwargs)
+
+    def set_model(self, provider_model_choice: str):
+        if provider_model_choice not in self.llm.allowed_models:
+            raise ValueError(f"Invalid model choice: {provider_model_choice}")
+
+        self.model_name = provider_model_choice
+        self.llm = self.set_llm(self.llm_str, name=self.model_name)
 
     def change_vectorizer(self, vectorizer: str):
         if vectorizer == "Doc2Vec":
