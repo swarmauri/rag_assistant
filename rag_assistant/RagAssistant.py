@@ -5,18 +5,29 @@ import uuid
 
 import pandas as pd
 
+# RAG Agent
 from swarmauri.agents.concrete.RagAgent import RagAgent
+
+# Conversations
 from swarmauri.conversations.concrete.SessionCacheConversation import (
     SessionCacheConversation,
 )
+
+# Embedding Document
 from swarmauri.documents.concrete import Document
+
+# LLMs
 from swarmauri.llms.concrete.AnthropicModel import AnthropicModel
 from swarmauri.llms.concrete import GeminiProModel
 from swarmauri.llms.concrete import GroqModel
 from swarmauri.llms.concrete import MistralModel
 from swarmauri.llms.concrete import OpenAIModel
+
+# utils
 from swarmauri.utils.load_documents_from_json import load_documents_from_json_file
 from swarmauri.utils.sql_log import sql_log
+
+# Vector Stores
 from swarmauri.vector_stores.concrete import Doc2VecVectorStore
 from swarmauri.vector_stores.concrete import MlmVectorStore
 from swarmauri.vector_stores.concrete import TfidfVectorStore
