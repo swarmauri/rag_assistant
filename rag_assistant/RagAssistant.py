@@ -17,7 +17,7 @@ from swarmauri.llms.concrete import MistralModel
 from swarmauri.llms.concrete import OpenAIModel
 from swarmauri.utils.load_documents_from_json import load_documents_from_json_file
 from swarmauri.utils.sql_log import sql_log
-from swarmauri.vector_stores.concret import Doc2VecVectorStore
+from swarmauri.vector_stores.concrete import Doc2VecVectorStore
 from swarmauri.vector_stores.concrete import MlmVectorStore
 from swarmauri.vector_stores.concrete import TfidfVectorStore
 
@@ -37,6 +37,7 @@ class RagAssistant:
         self.system_context = system_context
         self.api_key = api_key
         self.db_path = db_path
+        self.vectorstore = vectorstore
         self.conversation = SessionCacheConversation(
             max_size=2, system_message_content=self.system_context
         )
@@ -71,7 +72,7 @@ footer {
         self._init_file_path = None
 
     def initialize_agent(self):
-        VS = Doc2VecVectorStore()
+        VS = self.vectorstore()
         agent = RagAgent(
             name="Rag",
             system_context=self.system_context,
