@@ -29,7 +29,7 @@ class RagAssistant:
         self,
         api_key: str,
         model_name: str,
-        vector_store = Doc2VecVectorStore,
+        vectorstore = Doc2VecVectorStore,
         system_context: str = "You are a helpful assistant.",
         db_path: str = "prompt_responses.db",
     ):
@@ -82,6 +82,7 @@ footer {
         )
         return agent
 
+    # TODO: update method to much playground implementation 
     def set_model(self, provider_model_choice: str):
         if provider_model_choice in self.allowed_models:
             provider, model_name = provider_model_choice.split("_")
