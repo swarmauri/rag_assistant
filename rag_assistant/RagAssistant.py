@@ -29,6 +29,7 @@ class RagAssistant:
         self,
         api_key: str,
         model_name: str,
+        vector_store: str = Doc2VecVectorStore,
         system_context: str = "You are a helpful assistant.",
         db_path: str = "prompt_responses.db",
     ):
