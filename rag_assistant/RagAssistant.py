@@ -35,14 +35,8 @@ class RagAssistant:
         db_path: str = "prompt_responses.db",
     ):
         logging.info("Initializing... this will take a moment.")
-        self.system_context = system_context
-        self.api_key = api_key
-        self.db_path = db_path
-        self.vectorstore = vectorstore
-        self.conversation = SessionCacheConversation(
-            max_size=2, system_message_content=self.system_context
-        )
 
+        # Available LLMs
         self.available_llms = {
             "groq": GroqModel,
             "mistral": MistralModel,
@@ -50,8 +44,23 @@ class RagAssistant:
             "google": GeminiProModel,
             "anthropic": AnthropicModel,
         }
-        self.llm_str = llm
-        self.llm = self.set_llm(self.llm_str)
+
+        # Available Vectorizers
+        self.available_vectorizers = {
+            "Doc2Vec": Doc2VecVectorStore,
+            "MLM": MlmVectorStore,
+            "TF-IDF": TfidfVectorStore,
+        }
+
+        self.set_llm(llm)
+
+        self.system_context = system_context
+        self.api_key = api_key
+        self.db_path = db_path
+        self.vectorstore = vectorstore
+        self.conversation = SessionCacheConversation(
+            max_size=2, system_message_content=self.system_context
+        )
 
         self.chat_idx = {}
         self.retrieval_table = []
@@ -87,21 +96,14 @@ footer {
         agent = RagAgent(
             name="Rag",
             system_context=self.system_context,
-            model=self.model,
+            llm=self.llm,
             conversation=self.conversation,
             vector_store=VS,
         )
         return agent
 
     def get_allowed_models(self):
-        chosen_llm = self.available_llms.get(self.llm_str, None)
-
-        if chosen_llm is None:
-            raise ValueError(
-                f"LLM '{self.llm_str}' is not supported. Choose from {self.available_llms.keys()}"
-            )
-
-        return chosen_llm.allowed_models
+        return self.llm.allowed_models
 
     def set_llm(self, llm: str, **kwargs):
         """Set the LLM to use for the assistant"""
@@ -112,22 +114,24 @@ footer {
                 f"LLM '{llm}' is not supported. Choose from {self.available_llms.keys()}"
             )
 
-        return chosen_llm(api_key=self.api_key, **kwargs)
+        self.llm = chosen_llm(api_key=self.api_key, **kwargs)
 
     def set_model(self, provider_model_choice: str):
         if provider_model_choice not in self.llm.allowed_models:
             raise ValueError(f"Invalid model choice: {provider_model_choice}")
 
         self.model_name = provider_model_choice
-        self.llm = self.set_llm(self.llm_str, name=self.model_name)
+        self.llm.name = self.model_name
 
     def change_vectorizer(self, vectorizer: str):
-        if vectorizer == "Doc2Vec":
-            self.agent.vector_store = Doc2VecVectorStore()
-        if vectorizer == "MLM":
-            self.agent.vector_store = MlmVectorStore()
-        else:
-            self.agent.vector_store = TfidfVectorStore()
+        chosen_vectorizer = self.available_vectorizers.get(vectorizer, None)
+
+        if chosen_vectorizer is None:
+            raise ValueError(
+                f"Vectorizer '{vectorizer}' is not supported. Choose from {self.available_vectorizers.keys()}"
+            )
+
+        self.change_vectorizer(chosen_vectorizer)
 
     def load_json_from_file_info(self, file_info):
         self._load_and_filter_json(file_info.name)
