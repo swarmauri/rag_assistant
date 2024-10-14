@@ -1,4 +1,5 @@
 from RagAssistant import RagAssistant
+from gradio_interface import launch
 
 
 def main():
@@ -89,7 +90,7 @@ def main():
     api_key = args.api_key
 
     # Create Assistant
-    assistant = RagAssistant(api_key=api_key)
+    assistant = RagAssistant(api_key=api_key, llm="openai")
 
     # If params then modify Assistant's config related to model
     if args.provider_model:
@@ -123,13 +124,15 @@ def main():
     if args.show_documents_tab == True:
         launch_kwargs.update({"show_documents_tab": args.show_documents_tab})
 
+    # launch_kwargs["llm"] = "openai"
+
     # if args.favicon_path:
     # launch_kwargs.update({'favicon_path': args.favicon_path})
     # else:
     # launch_kwargs.update({'favicon_path': "favicon-32x32.png"})
 
     assistant.initialize_agent()
-    assistant.launch(**launch_kwargs)
+    launch(assistant=assistant, **launch_kwargs)
 
 
 if __name__ == "__main__":

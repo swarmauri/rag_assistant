@@ -8,10 +8,11 @@ import pandas as pd
 # RAG Agent
 from swarmauri.agents.concrete.RagAgent import RagAgent
 
-# Conversations
+# Conversations and messages
 from swarmauri.conversations.concrete.SessionCacheConversation import (
     SessionCacheConversation,
 )
+from swarmauri.messages.concrete import SystemMessage
 
 # Embedding Document
 from swarmauri.documents.concrete import Document
@@ -32,6 +33,7 @@ from swarmauri.vector_stores.concrete import Doc2VecVectorStore
 from swarmauri.vector_stores.concrete import MlmVectorStore
 from swarmauri.vector_stores.concrete import TfidfVectorStore
 
+
 head = """<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAABWFJREFUWEe1V2tsFFUU/s7M7KO77Ra2LRisUArasLjbLqVdaRfQkACCNISgUQJCiCHGfyaYEIMSfIQY/K3GEAUkqNHwUJ6JEoht7ZZuu92uaCktILUJpSy0233PzNU7SClNu9MWvX8ms+ec7/vOuefMvUsYxypxu2dYgHRLS8utcbhjrttdIMJiaG+p69HzJz0Hl8dTKMLYwRiIMeW11ov1hzLFlFZUbSQS93EfNZGaGwz6ujP56wpwOCoeM2abrhOREUBCluXKNv+vbaOBOssXOSVJagRgZgxJOZaaFQr5bj6SAB7sqvS+KoA+J4KJqawucLHWOxpoWaW3joiqOLmqsm3BptqDehXWrcB9gPlub6lkwGcEeAC8xxgjgmDhdgY1xp9E9A7AGmRZfj3U7AvqkWsx43G67+NaWLVeFMVvAIhjxCmKorwcbKr/fry4ExJQ5vFeI9CsTOCMsauBxtri/1yAy+WyCmZbhIgyimaMsd7ueHZPj1/bFr01gQqUG9yerBhAUmZQJrfIcQv8/rQe+YR7oKzS20ZET+tsQSjQWOscD7muAN7p5wOBXAuZp0GQ8g4fPrgjMhCpUWQZ4XAYf3Xf+8Y8XlgIu90OUZJgs9mOv7Jh00dGSehTTOgtLy4eICI2liBtC862tlrzJOtWEK0gYDZAFkbMAgYbANPwaWGMIRpPIJVKI3zrpjZH9vzpMBoNsGaZ+SgO5+LESRAGiFEMYDEGXCWiM32pyJcrSkuj1NDaUSgahJ8JeCpT2RRFwZ2BCG6F7yIWT2iuT0yza88bvWHtackyo8A+BVNtORDFsSZ1iKU9lZKXUdOlK98C9NJo5IqiIhKNItw/gP7IIFT1XiVzrBZMy5uKntbvtIxnuF7EzdthRKL3Gl8QCLk52bDn2pCTbYUoCKPmxsC+oabfO/t5qXlpeZaxRBLRWFwDG4zFwX/nyyBJGmC+PRdmkwn1F85i3ewTmu3otTVYtGQ5Eskk+sL9muC0LGs2LjDbmoUciwXZlixkmU1adbStYrhLvlBH/HLXdXMilYaqqg8pNRoMyM2xYootR8uaB3FBZ06dgDfvDJ51GTT/88E06u+swvKVq4Z8eAJ3ByLoj0SRSj88kYIgwGw0oGROUYIaQx117V1/VimqAk5oNhm1veSE/H14U8XjcXy1fz8W5Aewrpr35oN1pC6JQNiNjZu3wGw2Dxm4YC4gMhhDLJFAIpnS3kVBREnxrHpq/qOrRlXZsUznAgf5LRTCoQMHcPt2X6ZeRX5BATZt3oJ5DsfIiRgZx5iqrtVmpulS5xsA7QWYdroNX52dV3Dyhx/RFmzNSDzS6Corwws1NSgqmj2aEN6t2xc65nw6NLQNbV3TRUFdCyInAWZFUbs+2L3r3e4bNx6u9YRkADNnFiV37t71PhgVCwL/FqAtLUePP+N0aheVjGfB1g1L/YudxgXi6FOkK0VRgV+CqZYvvr6wYCznjAKSDav3GiVhuy5TBgdZVT82VJ58a1ICButWlVlNQjOf5smJYCwWVcqtS0+3TEoAD0o1rD5nkITnJiNAVtg5g+fEskyxupm5K6sXgoSGDNewsfAVQsrT7PP5H0kADy6tqN4jCMKOiVRBYezDYGPtTr0Y3Qr8CyCWVniPCgKt0QPkdsbYsUBj7XoAip7/eAXA4XAYXfMK9lU8KW1kY9wLiTHm75APtF8b3Ob/P65kPJven55fb7MIu0xGmv9gOhhLy2iLJtnuqUtPHtHLerh93BUYCdp1emXJJ8eS5xlAb9ZkLSlcferyRIjv+05aAAco8yz28UM94Kvl/5YmtR5JgKuy+m0wsODFuj2TYv8n6G+wcRzTJW9piwAAAABJRU5ErkJggg==" type="image/png">"""
 
 
@@ -40,8 +42,8 @@ class RagAssistant:
         self,
         api_key: str,
         llm: str,
-        model_name: str,
         vectorstore=Doc2VecVectorStore,
+        model_name: str = None,
         system_context: str = "You are a helpful assistant.",
         db_path: str = "prompt_responses.db",
     ):
@@ -49,9 +51,9 @@ class RagAssistant:
 
         # Available LLMs
         self.available_llms = {
+            "openai": OpenAIModel,
             "groq": GroqModel,
             "mistral": MistralModel,
-            "openai": OpenAIModel,
             "google": GeminiProModel,
             "anthropic": AnthropicModel,
         }
@@ -63,14 +65,13 @@ class RagAssistant:
             "TF-IDF": TfidfVectorStore,
         }
 
-        self.set_llm(llm)
-
-        self.system_context = system_context
+        # initialize attr with params
+        self.system_context = SystemMessage(content=system_context)
         self.api_key = api_key
         self.db_path = db_path
         self.vectorstore = vectorstore
         self.conversation = SessionCacheConversation(
-            max_size=2, system_message_content=self.system_context
+            max_size=2, system_context=self.system_context
         )
 
         self.chat_idx = {}
@@ -78,6 +79,8 @@ class RagAssistant:
         self.document_table = []
         self.long_term_memory_df = None
         self.last_recall_df = None
+
+        self.set_llm(llm)
         self.agent = self.initialize_agent()
         self.model_name = model_name
         self.set_model(model_name)
@@ -128,6 +131,9 @@ footer {
         self.llm = chosen_llm(api_key=self.api_key, **kwargs)
 
     def set_model(self, provider_model_choice: str):
+        if provider_model_choice is None:
+            return
+
         if provider_model_choice not in self.llm.allowed_models:
             raise ValueError(f"Invalid model choice: {provider_model_choice}")
 
@@ -142,7 +148,7 @@ footer {
                 f"Vectorizer '{vectorizer}' is not supported. Choose from {self.available_vectorizers.keys()}"
             )
 
-        self.change_vectorizer(chosen_vectorizer)
+        self.agent.vector_store = chosen_vectorizer()
 
     def load_json_from_file_info(self, file_info):
         self._load_and_filter_json(file_info.name)
