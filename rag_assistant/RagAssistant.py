@@ -87,7 +87,6 @@ class RagAssistant:
         self.long_term_memory_df = pd.DataFrame([])
         self.last_recall_df = pd.DataFrame([])
 
-        self.agent = self.initialize_agent()
         self.model_name = model_name
         self.set_model(model_name)
         self.set_vectorizer(vectorstore)

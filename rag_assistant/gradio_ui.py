@@ -259,21 +259,34 @@ footer {
             with gr.Tabs():
                 with gr.Tab("Chat"):
                     self._chat()
-                with gr.Tab("Documents"):
-                    self._document_table()
-                with gr.Tab("Additional Inputs"):
-                    self._additional_inputs()
-                with gr.Tab("LLM Variables"):
                     self._llm_variables()
-                with gr.Tab("Conversation Variables"):
                     self._conversation_variables()
 
-            with gr.Row():
-                self.file = gr.File(
-                    label="Upload Document", file_types=[".pdf", ".txt"]
-                )
-                self.load_button = gr.Button("Load Document")
-                self.save_button = gr.Button("Save Settings")
+                with gr.Tab("Documents"):
+                    self._document_table()
+
+                with gr.Tab("Additional Inputs"):
+                    self._additional_inputs()
+                    # self.additional_inputs.render()
+
+                # with gr.Tab("LLM Variables"):
+                #     self._llm_variables()
+                #     # self.llm_variables.render()
+
+                with gr.Tab("Conversation Variables"):
+                    self._conversation_variables()
+                    # self.conversation_variables.render()
+
+                with gr.Tab("Retrieval Table"):
+                    self._retrieval_table()
+                    # self.retrieval_table.render()
+
+            # with gr.Row():
+            #     self.file = gr.File(
+            #         label="Upload Document", file_types=[".pdf", ".txt"]
+            #     )
+            #     self.load_button = gr.Button("Load Document")
+            #     self.save_button = gr.Button("Save Settings")
 
             # Button event handlers
             self.send_button.click(
