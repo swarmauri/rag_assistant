@@ -78,9 +78,18 @@ class RagAssistant:
         self.chat_idx = {}
         self.retrieval_table = []
         self.document_table = []
-        self.long_term_memory_df = None
-        self.last_recall_df = None
 
+        # self.long_term_memory_df = None
+        # self.last_recall_df = None
+
+        self.set_llm(llm)
+
+        self.long_term_memory_df = pd.DataFrame([])
+        self.last_recall_df = pd.DataFrame([])
+
+        self.agent = self.initialize_agent()
+        self.model_name = model_name
+        self.set_model(model_name)
         self.set_vectorizer(vectorstore)
         self.set_llm(llm)
         self.set_model(model_name)
@@ -279,7 +288,10 @@ footer {
             history = [
                 each["content"] for each in self.agent.conversation.session_to_dict()
             ]
-            history = [(history[i], history[i + 1]) for i in range(0, len(history), 2)]
+            if len(history) > 0:
+                history = [
+                    (history[i], history[i + 1]) for i in range(0, len(history), 2)
+                ]
 
             # SQL Log
             end_datetime = datetime.now()
