@@ -15,7 +15,7 @@ from swarmauri.conversations.concrete.SessionCacheConversation import (
 from swarmauri.messages.concrete import SystemMessage
 
 # Embedding Document
-from swarmauri.documents.concrete import Document
+from swarmauri.documents.concrete.Document import Document
 
 # LLMs
 from swarmauri.llms.concrete.AnthropicModel import AnthropicModel
@@ -60,16 +60,16 @@ class RagAssistant:
 
         # Available Vectorizers
         self.available_vectorizers = {
-            "Doc2Vec": Doc2VecVectorStore,
-            "MLM": MlmVectorStore,
-            "TF-IDF": TfidfVectorStore,
+            "Doc2Vec": Doc2VecVectorStore(),
+            "MLM": MlmVectorStore(),
+            "TF-IDF": TfidfVectorStore(),
         }
 
         # initialize attr with params
         self.system_context = SystemMessage(content=system_context)
-        self.vectorstore = Doc2VecVectorStore
         self.api_key = api_key
         self.db_path = db_path
+        self.model_name = model_name
 
         self.conversation = SessionCacheConversation(
             max_size=2, system_context=self.system_context
@@ -81,11 +81,11 @@ class RagAssistant:
         self.long_term_memory_df = None
         self.last_recall_df = None
 
-        self.set_llm(llm)
-        self.agent = self.initialize_agent()
-        self.model_name = model_name
-        self.set_model(model_name)
         self.set_vectorizer(vectorstore)
+        self.set_llm(llm)
+        self.set_model(model_name)
+
+        self.agent = self.initialize_agent()
 
         self.css = """
 #chat-dialogue-container {
@@ -108,7 +108,7 @@ footer {
         self._init_file_path = None
 
     def initialize_agent(self):
-        VS = self.vectorstore()
+        VS = self.vector_store
         agent = RagAgent(
             name="Rag",
             system_context=self.system_context,
@@ -150,19 +150,32 @@ footer {
                 f"Vectorizer '{vectorizer}' is not supported. Choose from {self.available_vectorizers.keys()}"
             )
         self.vector_store = chosen_vectorizer
-        self.agent.vector_store = self.vector_store
 
-    def load_json_from_file_info(self, file_info):
-        self._load_and_filter_json(file_info.name)
+    def load_json_from_file_info(self, file_name):
+        self._load_and_filter_json(file_name)
 
     def _load_and_filter_json(self, filename):
         # Load JSON file using json library
         try:
-            documents = load_documents_from_json_file(filename)
-            self.agent.vector_store.documents = []
-            self.agent.vector_store.add_documents(documents)
-            self.long_term_memory_df = self.preprocess_documents(documents)
-            return self.long_term_memory_df
+            documents = []
+            data = []
+
+            with open(filename, "r") as f:
+                data = json.loads(f.read())
+
+            for doc in data:
+                print(doc)
+                documents.append(Document(content=doc))
+
+            # documents = load_documents_from_json_file(filename)
+
+            # empty existing documents first
+            # self.agent.vector_store.documents = []
+
+            self.vector_store.add_documents(documents)
+
+            # self.long_term_memory_df = self.preprocess_documents(documents)
+            # return self.long_term_memory_df
         except json.JSONDecodeError:
             # error_fn("Invalid JSON file. Please check the file and try again.")
             return "Invalid JSON file. Please check the file and try again."
