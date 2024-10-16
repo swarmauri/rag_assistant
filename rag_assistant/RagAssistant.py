@@ -12,7 +12,7 @@ from swarmauri.agents.concrete.RagAgent import RagAgent
 from swarmauri.conversations.concrete.SessionCacheConversation import (
     SessionCacheConversation,
 )
-from swarmauri.messages.concrete import SystemMessage
+from swarmauri.messages.concrete import SystemMessage, AgentMessage, HumanMessage
 
 # Embedding Document
 from swarmauri.documents.concrete.Document import Document
@@ -54,7 +54,7 @@ class RagAssistant:
             "openai": OpenAIModel,
             "groq": GroqModel,
             "mistral": MistralModel,
-            "google": GeminiProModel,
+            "gemini": GeminiProModel,
             "anthropic": AnthropicModel,
         }
 
@@ -72,8 +72,10 @@ class RagAssistant:
         self.model_name = model_name
 
         self.conversation = SessionCacheConversation(
-            max_size=2, system_context=self.system_context
+            max_size=200, system_context=self.system_context
         )
+
+        self.agent = None
 
         self.chat_idx = {}
         self.retrieval_table = []
@@ -93,7 +95,7 @@ class RagAssistant:
         self.set_llm(llm)
         self.set_model(model_name)
 
-        self.agent = self.initialize_agent()
+        self.initialize_agent()
 
         self.css = """
 #chat-dialogue-container {
@@ -117,14 +119,19 @@ footer {
 
     def initialize_agent(self):
         VS = self.vector_store
-        agent = RagAgent(
+        self.agent = RagAgent(
             name="Rag",
             system_context=self.system_context,
             llm=self.llm,
             conversation=self.conversation,
             vector_store=VS,
         )
-        return agent
+        return self.agent
+
+    def get_llm_name(self):
+        for llm_name, llm in self.available_llms.items():
+            if isinstance(self.llm, llm):
+                return llm_name
 
     def get_allowed_models(self):
         return self.llm.allowed_models
@@ -139,6 +146,9 @@ footer {
             )
 
         self.llm = chosen_llm(api_key=self.api_key, **kwargs)
+
+        if self.agent is not None:
+            self.agent.llm = self.llm
 
     def set_model(self, provider_model_choice: str):
         if provider_model_choice is None:
@@ -309,3 +319,11 @@ footer {
             self.agent.conversation._history.pop(0)
             logging.info(f"chatbot_function error: {e}")
             return chat_id, "", [], history
+
+
+def set_conversation_size(self, conversation_size: int):
+    self.conversation.max_size = conversation_size
+
+
+def set_session_cache_size(self, session_cache_size: int):
+    self.conversation.session_max_size = session_cache_size

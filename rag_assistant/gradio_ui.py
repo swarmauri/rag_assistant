@@ -1,3 +1,5 @@
+import logging
+
 import gradio as gr
 
 from RagAssistant import RagAssistant
@@ -12,9 +14,14 @@ class Gradio_UI:
 
         # Rag Assistant
         self.assistant = RagAssistant(api_key=api_key, llm=llm)
+        self.allowed_models = self.assistant.get_allowed_models()
 
         # toggle values
-        self._show_api_key = False
+        self._show_api_key = True
+        self._show_documents_tab = True
+        self._show_provider_llm = True
+        self._show_provider_model = True
+        self._show_system_context = True
 
         # gradio components
         self.send_button = None
@@ -54,7 +61,7 @@ footer {
         self.chat = None
         self.additional_inputs = None
         self.llm_variables = None
-        self.conversation_variables = None
+        self.settings = None
         self.document_table = None
 
         # App
@@ -72,15 +79,14 @@ footer {
                 )
 
     def _chat(self):
+        """Defines the chat UI."""
         with gr.Blocks(css=self.css) as self.chat:
             with gr.Row():
-                self.chat_id = gr.State(None)
+                self.chat_id = gr.State([])  # Initialize chat history
+
                 self.chatbot = gr.Chatbot(
-                    type="messages",
                     label="Chat History",
-                    layout="panel",
                     elem_id="chat-dialogue-container",
-                    container=True,
                     show_copy_button=True,
                     height="70vh",
                 )
@@ -90,37 +96,90 @@ footer {
                 self.send_button = gr.Button("Send", scale=1)
                 self.clear_button = gr.Button("Clear", scale=1)
 
+            # Send button click event
+            self.send_button.click(
+                fn=self._reply_to_chat,
+                inputs=[self.input_box, self.chat_id],
+                outputs=[self.chatbot, self.chat_id, self.input_box],
+            )
+
+            # Clear button click event
+            self.clear_button.click(
+                fn=lambda: ([], []),  # Reset both chatbot and chat history
+                outputs=[self.chatbot, self.chat_id],
+            )
+
+    def _reply_to_chat(self, message, chat_history):
+        """Processes the user message and adds it to the chat."""
+        llm_kwargs = {
+            "temperature": self.settings["Temperature"].value,
+            "max_tokens": self.settings["Max tokens"].value,
+        }
+
+        # Get the response from the assistant
+        response_content = self.assistant.agent.exec(
+            input_data=message,
+            top_k=self.settings["Top K elements"].value,
+            llm_kwargs=llm_kwargs,
+        )
+
+        # Initialize chat history if it's None
+        chat_history = chat_history or []
+
+        # Add user and assistant messages as tuples
+        chat_history.append((message, response_content))
+
+        # Log the updated chat history for debugging purposes
+        logging.info(f"Chat history: {chat_history}")
+
+        return chat_history, chat_history, ""  # Update both chatbot and state
+
     def _additional_inputs(self):
-        with gr.Accordion("See Details", open=False):
-            self.additional_inputs = [
-                gr.Textbox(
+        with gr.Accordion("Credentials", open=False):
+            self.additional_inputs = {
+                "API Key": gr.Textbox(
                     label="API Key",
                     value=self.api_key or "Enter your API Key",
                     visible=self._show_api_key,
                 ),
-                gr.Dropdown(
-                    self.assistant.get_allowed_models(),
-                    value=self.assistant.model_name,
-                    label="Model",
-                    info="Select openai model",
-                    visible=self.assistant._show_provider_model,
-                ),
-                gr.Textbox(
-                    label="System Context",
-                    value=self.assistant.system_context,
-                    visible=self.assistant._show_system_context,
-                ),
-                gr.Checkbox(
+                "Fixed Retrieval": gr.Checkbox(
                     label="Fixed Retrieval",
                     value=True,
                     interactive=True,
                 ),
-            ]
+            }
 
     def _llm_variables(self):
         with gr.Accordion("LLM Variables", open=False):
-            self.llm_variables = [
-                gr.Slider(
+            self.llm_variables = {
+                "LLM": gr.Dropdown(
+                    value=self.assistant.get_llm_name(),
+                    choices=list(self.assistant.available_llms.keys()),
+                    label="LLM",
+                    info="Select the language model",
+                    interactive=True,
+                    visible=self._show_provider_llm,
+                ),
+                "Model": gr.Dropdown(
+                    value=self.assistant.agent.llm.name,
+                    choices=self.assistant.agent.llm.allowed_models,
+                    label="Model",
+                    info="Select openai model",
+                    interactive=True,
+                    visible=self._show_provider_model,
+                ),
+                "System Context": gr.Textbox(
+                    label="System Context",
+                    value=self.assistant.system_context.content,
+                    visible=self._show_system_context,
+                ),
+            }
+        self._llm_event_handlers()
+
+    def _settings(self):
+        with gr.Accordion("Settings", open=False):
+            self.settings = {
+                "Top K elements": gr.Slider(
                     label="Top K",
                     value=10,
                     minimum=0,
@@ -128,7 +187,7 @@ footer {
                     step=5,
                     interactive=True,
                 ),
-                gr.Slider(
+                "Temperature": gr.Slider(
                     label="Temperature",
                     value=1,
                     minimum=0.0,
@@ -136,20 +195,15 @@ footer {
                     step=0.1,
                     interactive=True,
                 ),
-                gr.Slider(
-                    label="Max new tokens",
+                "Max tokens": gr.Slider(
+                    label="Max tokens",
                     value=256,
                     minimum=256,
                     maximum=4096,
                     step=64,
                     interactive=True,
                 ),
-            ]
-
-    def _conversation_variables(self):
-        with gr.Accordion("Conversation Variables", open=False):
-            self.conversation_variables = [
-                gr.Slider(
+                "Conversation size": gr.Slider(
                     label="Conversation size",
                     value=12,
                     minimum=2,
@@ -157,7 +211,7 @@ footer {
                     step=2,
                     interactive=True,
                 ),
-                gr.Slider(
+                "Session Cache size": gr.Slider(
                     label="Session Cache size",
                     value=12,
                     minimum=2,
@@ -165,7 +219,40 @@ footer {
                     step=2,
                     interactive=True,
                 ),
-            ]
+            }
+
+        def _settings_event_handlers(self):
+            self.settings["Conversation size"].change(
+                fn=self.assistant.set_conversation_size,
+                inputs=[self.settings["Conversation size"]],
+                outputs=[],
+            )
+            self.settings["Session Cache size"].change(
+                fn=self.assistant.set_session_cache_size,
+                inputs=[self.settings["Session Cache size"]],
+                outputs=[],
+            )
+
+    def _change_llm(self, llm):
+        """Sets the selected LLM and updates the available models."""
+        self.assistant.set_llm(llm)
+        self.allowed_models = self.assistant.get_allowed_models()
+
+        # Update the LLM dropdown and models dynamically
+        return gr.update(choices=self.allowed_models, value=self.allowed_models[0])
+
+    def _llm_event_handlers(self):
+        self.llm_variables["LLM"].change(
+            fn=self._change_llm,
+            inputs=[self.llm_variables["LLM"]],
+            outputs=[self.llm_variables["Model"]],
+        )
+
+        self.llm_variables["Model"].change(
+            fn=self.assistant.set_model,
+            inputs=[self.llm_variables["Model"]],
+            outputs=[],
+        )
 
     def _document_table(self):
         with gr.Blocks(css=self.css) as self.document_table:
@@ -209,73 +296,20 @@ footer {
             # Ensure the save button's event is within the context
             self.save_button.click(self.save_df, inputs=[self.data_frame])
 
-    # def _app(self):
-    #     self._retrieval_table()
-    #     self._chat()
-    #     self._additional_inputs()
-    #     self._llm_variables()
-    #     self._conversation_variables()
-    #     self._document_table()
-
-    #     self.send_button.click(
-    #         self.assistant.chatbot_function,
-    #         inputs=[self.chat_id, self.input_box],
-    #         outputs=[
-    #             self.chat_id,
-    #             self.input_box,
-    #             self.retrieval_table,
-    #             self.chatbot,
-    #         ],
-    #     )
-
-    #     self.clear_button.click(
-    #         self.assistant.clear_chat,
-    #         inputs=[self.chat_id],
-    #         outputs=[
-    #             self.chat_id,
-    #             self.input_box,
-    #             self.retrieval_table,
-    #             self.chatbot,
-    #         ],
-    #     )
-
-    #     with gr.Blocks(
-    #         css=self.css, title="Swarmauri Rag Agent", head=self.head
-    #     ) as self.app:
-    #         with gr.Tab("chat", visible=True):
-    #             self.chat.render()
-    #         with gr.Tab("retrieval", visible=self._show_documents_tab):
-    #             self.retrieval_table.render()
-    #         with gr.Tab("documents", visible=self._show_documents_tab):
-    #             self.document_table.render()
-
-    # def run(self):
-    #     self._app()
-    #     self.app.launch()
-
     def _layout(self):
         """Defines the overall layout of the application."""
         with gr.Blocks(css=self.css, title="RAG Assistant") as self.app:
             with gr.Tabs():
                 with gr.Tab("Chat"):
                     self._chat()
-                    self._llm_variables()
-                    self._conversation_variables()
+
+                    with gr.Row():
+                        self._llm_variables()
+                        self._settings()
+                        self._additional_inputs()
 
                 with gr.Tab("Documents"):
                     self._document_table()
-
-                with gr.Tab("Additional Inputs"):
-                    self._additional_inputs()
-                    # self.additional_inputs.render()
-
-                # with gr.Tab("LLM Variables"):
-                #     self._llm_variables()
-                #     # self.llm_variables.render()
-
-                with gr.Tab("Conversation Variables"):
-                    self._conversation_variables()
-                    # self.conversation_variables.render()
 
                 with gr.Tab("Retrieval Table"):
                     self._retrieval_table()
@@ -289,25 +323,16 @@ footer {
             #     self.save_button = gr.Button("Save Settings")
 
             # Button event handlers
-            self.send_button.click(
-                self._on_send_message, inputs=[self.input_box], outputs=[self.chatbot]
-            )
-            self.clear_button.click(self._on_clear_chat, outputs=[self.chatbot])
-            self.load_button.click(
-                self._on_load_document,
-                inputs=[self.file],
-                outputs=[self.document_table],
-            )
+            # self.send_button.click(
+            #     self._on_send_message, inputs=[self.input_box], outputs=[self.chatbot]
+            # )
+            # self.clear_button.click(self._on_clear_chat, outputs=[self.chatbot])
+            # self.load_button.click(
+            #     self._on_load_document,
+            #     inputs=[self.file],
+            #     outputs=[self.document_table],
+            # )
             self.save_button.click(self._on_save_settings)
-
-    def _on_send_message(self, message):
-        """Handles sending a message to the chatbot."""
-        response = self.assistant.send_message(message)
-        self.chatbot.append((message, response))
-
-    def _on_clear_chat(self):
-        """Clears the chat history."""
-        self.chatbot.update([])
 
     def _on_load_document(self, file):
         """Loads a document and updates the document table."""
