@@ -6,11 +6,26 @@ from RagAssistant import RagAssistant
 
 
 class Gradio_UI:
-    def __init__(self, api_key: str, llm: str, model_name: str = None):
+    def __init__(
+        self,
+        api_key: str,
+        llm: str,
+        model_name: str = None,
+        # Gradio UI settings
+        title="Rag Assistant",
+        share_url=False,
+        show_api_key=True,
+        show_documents_tab=True,
+        show_provider_llm=True,
+        show_provider_model=True,
+        show_system_context=True,
+    ):
         # params
         self.api_key = api_key
         self.llm = llm
         self.model_name = model_name
+        self.title = title
+        self.share_url = share_url
 
         # Rag Assistant
         self.assistant = RagAssistant(api_key=api_key, llm=llm)
@@ -252,6 +267,7 @@ class Gradio_UI:
 
         # Log the updated chat history for debugging purposes
         logging.info(f"Chat history: {chat_history}")
+        print(f"Files: {self.assistant.agent.last_retrieved}")
 
         return chat_history, chat_history, ""  # Update both chatbot and state
 
@@ -292,6 +308,7 @@ class Gradio_UI:
         """Loads a document and updates the document table."""
         if file:
             doc_name = file.name
+            self.assistant.load_json_from_file_info(file)
             from datetime import datetime
 
             return [[doc_name], ["Loaded"], [datetime.now().isoformat()]]
@@ -307,13 +324,14 @@ class Gradio_UI:
     def _on_save_settings(self):
         """Handles saving current settings."""
         # Here you can implement any logic to save settings (e.g., API key, model)
+
         print("Settings saved!")
 
     # ----------------------------------- LAYOUT (arrangement of the interface) ---------------------------
 
     def _layout(self):
         """Defines the overall layout of the application."""
-        with gr.Blocks(css=self.assistant.css, title="RAG Assistant") as self.app:
+        with gr.Blocks(css=self.assistant.css, title=self.title) as self.app:
             with gr.Tabs():
                 with gr.Tab("Chat"):
                     self._chat()
@@ -337,4 +355,4 @@ class Gradio_UI:
     def launch(self):
         """Launches the Gradio application."""
         self._layout()
-        self.app.launch()
+        self.app.launch(share=self.share_url)

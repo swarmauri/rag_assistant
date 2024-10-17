@@ -169,8 +169,8 @@ footer {
             )
         self.vector_store = chosen_vectorizer
 
-    def load_json_from_file_info(self, file_name):
-        self._load_and_filter_json(file_name)
+    def load_json_from_file_info(self, file):
+        self._load_and_filter_json(file.name)
 
     def _load_and_filter_json(self, filename):
         # Load JSON file using json library
@@ -181,9 +181,10 @@ footer {
             with open(filename, "r") as f:
                 data = json.loads(f.read())
 
+            # Filter out invalid or empty documents
             for doc in data:
-                print(doc)
-                documents.append(Document(content=doc))
+                if doc and isinstance(doc, str):  # Ensure valid content
+                    documents.append(Document(content=doc))
 
             # documents = load_documents_from_json_file(filename)
 
