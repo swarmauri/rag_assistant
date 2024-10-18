@@ -1,4 +1,5 @@
 import logging
+from typing import Dict, List
 
 import gradio as gr
 
@@ -19,6 +20,13 @@ class Gradio_UI:
         show_provider_llm=True,
         show_provider_model=True,
         show_system_context=True,
+        # vector store params
+        vector_store_db_path: str = "prompt_responses.db",
+        vector_store_api_key: str = None,
+        vector_store_url: str = None,
+        vector_store_collection_name: str = None,
+        vector_store_vector_size: int = None,
+        vector_store_vectorizer: str = None,
     ):
         # params
         self.api_key = api_key
@@ -27,16 +35,25 @@ class Gradio_UI:
         self.title = title
         self.share_url = share_url
 
+        # vector store params
+        self.vector_store_api_key = vector_store_api_key
+        self.vector_store_url = vector_store_url
+        self.vector_store_collection_name = vector_store_collection_name
+        self.vector_store_vector_size = vector_store_vector_size
+        self.vector_store_db_path = vector_store_db_path
+        self.vector_store_vectorizer = vector_store_vectorizer
+
         # Rag Assistant
         self.assistant = RagAssistant(api_key=api_key, llm=llm)
         self.allowed_models = self.assistant.get_allowed_models()
 
         # toggle values
-        self._show_api_key = True
-        self._show_documents_tab = True
-        self._show_provider_llm = True
-        self._show_provider_model = True
-        self._show_system_context = True
+        self._show_api_key = show_api_key
+        self._show_documents_tab = show_documents_tab
+        self._show_provider_llm = show_provider_llm
+        self._show_provider_model = show_provider_model
+        self._show_system_context = show_system_context
+        self._show_documents_tab = show_documents_tab
 
         # gradio components
         self.send_button = None
@@ -47,10 +64,11 @@ class Gradio_UI:
         self.vectorizer = None
 
         # ui variables
+        self.user_sessions: Dict[str, List] = {}  # Store chat states per user
+        self.documents = []
         self.chat_id = None
         self.chatbot = None
         self._init_file_path = None
-        self._show_documents_tab = False
         self.data_frame = None
         self.save_button = None
         self.save_df = None
@@ -71,10 +89,11 @@ class Gradio_UI:
     # ------------------------------------------------------------ TABS AND THEIR COMPONENTS  ------------------------------------------------
 
     def _chat(self):
-        """Chat Tab (*Main component*). Defines the chat UI"""
+        """Modified Chat Tab to handle user-specific state."""
         with gr.Blocks(css=self.assistant.css) as self.chat:
             with gr.Row():
-                self.chat_id = gr.State([])  # Initialize chat history
+                # Each session state is user-specific
+                self.chat_id = gr.State([])
 
                 self.chatbot = gr.Chatbot(
                     label="Chat History",
@@ -89,16 +108,16 @@ class Gradio_UI:
                 self.send_button = gr.Button("Send", scale=1)
                 self.clear_button = gr.Button("Clear", scale=1)
 
-            # Send button click event
+            # Modify send button to use session-based state
             self.send_button.click(
                 fn=self._reply_to_chat,
                 inputs=[self.input_box, self.chat_id],
                 outputs=[self.chatbot, self.chat_id, self.input_box],
             )
 
-            # Clear button click event
+            # Clear button now resets the user's session state
             self.clear_button.click(
-                fn=lambda: ([], []),  # Reset both chatbot and chat history
+                fn=lambda: ([], []),
                 outputs=[self.chatbot, self.chat_id],
             )
 
@@ -210,12 +229,13 @@ class Gradio_UI:
                 inputs=[self.vectorizer],
                 outputs=[],
             )
-        print(self.assistant.agent)
 
         with gr.Row():
             if self._init_file_path:
                 df = self.assistant._load_and_filter_json(self._init_file_path)
             self.data_frame = gr.Dataframe(
+                headers=["Document", "Status", "Timestamp"],
+                col_count=(3, "fixed"),
                 interactive=True,
                 wrap=True,
                 line_breaks=True,
@@ -230,7 +250,7 @@ class Gradio_UI:
             self.save_button.click(
                 self._on_load_document,
                 inputs=[self.file],
-                outputs=[self.data_frame],
+                outputs=[self.file, self.data_frame],
             )
 
     def _retrieval_table(self):
@@ -247,6 +267,14 @@ class Gradio_UI:
 
     # -------------------------------------------------- HANDLERS ------------------------------------------------------
 
+    def _get_user_session(self, user_id: str) -> List:
+        """Retrieve the chat history for a specific user."""
+        return self.user_sessions.setdefault(user_id, [])
+
+    def _update_user_session(self, user_id: str, message: str):
+        """Update chat history for the given user."""
+        self.user_sessions[user_id].append(message)
+
     def _reply_to_chat(self, message, chat_history):
         """Chat handler
         Processes the user message and adds it to the chat."""
@@ -261,15 +289,6 @@ class Gradio_UI:
             top_k=self.settings["Top K elements"].value,
             llm_kwargs=llm_kwargs,
         )
-
-        # Initialize chat history if it's None
-        chat_history = self.assistant.conversation.session_to_dict()
-
-        # Log the updated chat history for debugging purposes
-        logging.info(f"Chat history: {chat_history}")
-        print(f"Files: {self.assistant.agent.last_retrieved}")
-
-        return chat_history, chat_history, ""  # Update both chatbot and state
 
     def _change_llm(self, llm):
         """Sets the selected LLM and updates the available models."""
@@ -311,14 +330,34 @@ class Gradio_UI:
             self.assistant.load_json_from_file_info(file)
             from datetime import datetime
 
-            return [[doc_name], ["Loaded"], [datetime.now().isoformat()]]
+            # Create a new row as a list (expected format by gr.Dataframe)
+            new_row = [doc_name, "Loaded", datetime.now().strftime("%Y-%m-%d %H:%M:%S")]
+            self.documents.append(new_row)
+
+            # Safely extract the current data or initialize an empty list
+            current_data = self.data_frame.value
+
+            print(f"current_data: {current_data}")
+            # Ensure the data is a list of lists
+            current_data["data"] = self.documents
+
+            self.data_frame.value = current_data
+
+            # Clear the file input and return the updated dataframe
+            return None, gr.update(value=current_data)
+
+        # If no file is provided, return the current state
+        return None, [new_row]
 
     def _document_event_handler(self):
+        """Set up the load button click event."""
         self.load_button.click(
-            # self.assistant.load_json_from_file_info,
-            self._on_load_document,
-            inputs=[self.file],
-            outputs=[self.data_frame],
+            fn=self._on_load_document,
+            inputs=[self.file],  # Input: Uploaded file
+            outputs=[
+                self.file,
+                self.data_frame,
+            ],  # Output: Clear file input, update dataframe
         )
 
     def _on_save_settings(self):
@@ -341,11 +380,11 @@ class Gradio_UI:
                         self._settings()
                         self._additional_inputs()
 
-                with gr.Tab("Documents"):
+                with gr.Tab("Documents", visible=self._show_documents_tab):
                     self._document_table()
                     self._document_event_handler()
 
-                with gr.Tab("Retrieval Table"):
+                with gr.Tab("Retrieval Table", visible=self._show_documents_tab):
                     self._retrieval_table()
 
             self.save_button.click(self._on_save_settings)
