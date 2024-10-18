@@ -1,4 +1,6 @@
 import logging
+import pandas as pd
+import json
 from typing import Dict, List
 
 import gradio as gr
@@ -22,11 +24,11 @@ class Gradio_UI:
         show_system_context=True,
         # vector store params
         vector_store_db_path: str = "prompt_responses.db",
+        vector_store_collection_name: str = "RAG Prompt Responses",
+        vector_store_vector_size: int = 1024,
+        vector_store_vectorizer: str = None,
         vector_store_api_key: str = None,
         vector_store_url: str = None,
-        vector_store_collection_name: str = None,
-        vector_store_vector_size: int = None,
-        vector_store_vector_store: str = None,
     ):
         # params
         self.api_key = api_key
@@ -35,16 +37,18 @@ class Gradio_UI:
         self.title = title
         self.share_url = share_url
 
-        # vector store params
-        self.vector_store_api_key = vector_store_api_key
-        self.vector_store_url = vector_store_url
-        self.vector_store_collection_name = vector_store_collection_name
-        self.vector_store_vector_size = vector_store_vector_size
-        self.vector_store_db_path = vector_store_db_path
-        self.vector_store_vector_store = vector_store_vector_store
-
         # Rag Assistant
-        self.assistant = RagAssistant(api_key=api_key, llm=llm)
+        self.assistant = RagAssistant(
+            api_key=api_key,
+            llm=llm,
+            # rag params
+            vector_store_db_path=vector_store_db_path,
+            vector_store_api_key=vector_store_api_key,
+            vector_store_url=vector_store_url,
+            vector_store_collection_name=vector_store_collection_name,
+            vector_store_vector_size=vector_store_vector_size,
+            vector_store_vectorizer=vector_store_vectorizer,
+        )
         self.allowed_models = self.assistant.get_allowed_models()
 
         # toggle values
@@ -215,7 +219,10 @@ class Gradio_UI:
         with gr.Blocks(css=self.assistant.css) as self.document_table:
             with gr.Row():
                 self.file = gr.File(
-                    label="Upload JSON File", value=self._init_file_path
+                    label="Upload JSON/PDF/txt File",
+                    value=self._init_file_path,
+                    file_count="multiple",
+                    file_types=[".json", ".pdf", ".txt"],
                 )
             self.vector_store = gr.Dropdown(
                 choices=self.assistant.available_vector_stores.keys(),
@@ -254,16 +261,135 @@ class Gradio_UI:
             )
 
     def _retrieval_table(self):
-        """retrieve table tab"""
-        with gr.Blocks(css=self.assistant.css) as self.retrieval_table:
+        """Build the UI to load, edit, and save different file types."""
+        with gr.Blocks(css=self.assistant.css) as self.retrieval_interface:
             with gr.Row():
-                self.retrieval_table = gr.Dataframe(
-                    interactive=False,
-                    wrap=True,
-                    line_breaks=True,
-                    elem_id="document-table-container",
-                    # height="800",
+                self.file_upload = gr.File(
+                    label="Upload File (CSV, JSON, TXT)", type="filepath"
                 )
+
+            with gr.Row():
+                self.content_display = gr.Textbox(
+                    label="File Content",
+                    lines=20,
+                    interactive=True,
+                    visible=False,
+                )
+                self.json_display = gr.Code(
+                    label="JSON Editor",
+                    language="json",
+                    interactive=True,
+                    visible=False,
+                )
+                self.dataframe_display = gr.Dataframe(
+                    # headers=[],
+                    interactive=True,
+                    visible=False,
+                )
+
+            with gr.Row():
+                self.save_button = gr.Button("Save Edits")
+
+            # Event handlers for file upload and save button
+            self.file_upload.change(
+                fn=self._on_file_upload,
+                inputs=[self.file_upload],
+                outputs=[
+                    self.content_display,
+                    self.json_display,
+                    self.dataframe_display,
+                ],
+            )
+
+            self.save_button.click(
+                fn=self._on_save_edits,
+                inputs=[
+                    self.content_display,
+                    self.json_display,
+                    self.dataframe_display,
+                ],
+                outputs=[],
+            )
+
+    def _on_file_upload(self, file):
+        """Handle file upload and show appropriate editor."""
+        content = ""
+
+        with open(file, "r") as f:
+            content = f.read()
+
+        if isinstance(content, list):  # CSV case (loaded as list of dicts)
+            self.documents = content
+            return (
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(value=content, visible=True),
+            )
+
+        elif isinstance(content, dict):  # JSON case
+            self.documents = content
+            return (
+                gr.update(visible=False),
+                gr.update(value=json.dumps(content, indent=2), visible=True),
+                gr.update(visible=False),
+            )
+
+        elif isinstance(content, str):  # TXT case
+            self.documents = content
+            return (
+                gr.update(value=content, visible=True),
+                gr.update(visible=False),
+                gr.update(visible=False),
+            )
+
+        else:
+            return "Unsupported file type."
+
+    def _on_save_edits(self, text_content, json_content, dataframe_content):
+        """Handle saving edits based on the file type."""
+        if text_content:
+            with open("edited_file.txt", "w") as f:
+                f.write(text_content)
+            print("TXT file saved!")
+
+        elif json_content:
+            with open("edited_file.json", "w") as f:
+                json.dump(json.loads(json_content), f, indent=2)
+            print("JSON file saved!")
+
+        elif dataframe_content:
+            df = pd.DataFrame(dataframe_content)
+            df.to_csv("edited_file.csv", index=False)
+            print("CSV file saved!")
+
+    # def _retrieval_table(self):
+    #     """retrieve table tab"""
+    #     with gr.Blocks(css=self.assistant.css) as self.retrieval_table:
+    #         with gr.Row():
+    #             self.retrieval_table = gr.Dataframe(
+    #                 headers=["Document", "Status", "Timestamp"],
+    #                 col_count=(3, "fixed"),
+    #                 interactive=True,
+    #                 wrap=True,
+    #                 line_breaks=True,
+    #                 elem_id="document-table-container",
+    #                 # height="800",
+    #             )
+    #         with gr.Row():
+    #             self.save_df = gr.Button("Save Edits")
+    #             self.save_df.click(
+    #                 fn=self._on_save_edits,
+    #                 inputs=[self.retrieval_table],
+    #                 outputs=[self.retrieval_table],
+    #             )
+
+    # def _on_save_edits(self, edited_data):
+    #     """Handles saving edits made to the document table."""
+    #     # Implement logic to save the edited data
+    #     # For example, you can update the self.documents list or save to a file
+    #     self.documents = edited_data["data"]
+    #     print("Edits saved!")
+    #     return gr.update(value=edited_data)
 
     # -------------------------------------------------- HANDLERS ------------------------------------------------------
 
@@ -331,15 +457,23 @@ class Gradio_UI:
             outputs=[],
         )
 
-    def _on_load_document(self, file):
+    def _on_load_document(self, files):
         """Loads a document and updates the document table."""
-        if file:
+        for file in files:
+            file_type = file.name.split(".")[-1]
             doc_name = file.name
-            self.assistant.load_json_from_file_info(file)
+            if file_type == "json":
+                self.assistant.load_json_from_file_info(file)
+            elif file_type == "pdf":
+                self.assistant.load_pdf_from_file_info(file)
             from datetime import datetime
 
             # Create a new row as a list (expected format by gr.Dataframe)
-            new_row = [doc_name, "Loaded", datetime.now().strftime("%Y-%m-%d %H:%M:%S")]
+            new_row = [
+                doc_name,
+                "Loaded",
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            ]
             self.documents.append(new_row)
 
             # Safely extract the current data or initialize an empty list
@@ -354,7 +488,7 @@ class Gradio_UI:
             return None, gr.update(value=current_data)
 
         # If no file is provided, return the current state
-        return None, [new_row]
+        return None, self.documents
 
     def _document_event_handler(self):
         """Set up the load button click event."""

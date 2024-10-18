@@ -3,6 +3,7 @@ import json
 import logging
 import uuid
 
+import fitz
 import pandas as pd
 
 # RAG Agent
@@ -34,19 +35,19 @@ from swarmauri.vector_stores.concrete import (
     TfidfVectorStore,
     SqliteVectorStore,
 )
-# from swarmauri_community.vector_stores.RedisVectorStore import RedisVectorStore
-# from swarmauri_community.vector_stores.DuckDBVectorStore import DuckDBVectorStore
-# from swarmauri_community.vector_stores.Neo4jVectorStore import Neo4jVectorStore
-# from swarmauri_community.vector_stores.PersistentChromaDBVectorStore import (
-#     PersistentChromaDBVectorStore,
-# )
-# from swarmauri_community.vector_stores.PersistentQdrantVectorStore import (
-#     PersistentQdrantVectorStore,
-# )
-# from swarmauri_community.vector_stores.PineconeVectorStore import PineconeVectorStore
-# from swarmauri_community.vector_stores.CloudQdrantVectorStore import (
-#     CloudQdrantVectorStore,
-# )
+from swarmauri_community.vector_stores.RedisVectorStore import RedisVectorStore
+from swarmauri_community.vector_stores.DuckDBVectorStore import DuckDBVectorStore
+from swarmauri_community.vector_stores.Neo4jVectorStore import Neo4jVectorStore
+from swarmauri_community.vector_stores.PersistentChromaDBVectorStore import (
+    PersistentChromaDBVectorStore,
+)
+from swarmauri_community.vector_stores.PersistentQdrantVectorStore import (
+    PersistentQdrantVectorStore,
+)
+from swarmauri_community.vector_stores.PineconeVectorStore import PineconeVectorStore
+from swarmauri_community.vector_stores.CloudQdrantVectorStore import (
+    CloudQdrantVectorStore,
+)
 # from swarmauri_community.vector_stores.CloudWeaviateVectorStore import (
 #     CloudWeaviateVectorStore,
 # )
@@ -68,7 +69,7 @@ class RagAssistant:
         vector_store_url: str = None,
         vector_store_collection_name: str = None,
         vector_store_vector_size: int = None,
-        vector_store_vector_store: str = None,
+        vector_store_vectorizer: str = None,
     ):
         logging.info("Initializing... this will take a moment.")
 
@@ -86,14 +87,27 @@ class RagAssistant:
             "Doc2Vec": Doc2VecVectorStore,
             "TF-IDF": TfidfVectorStore,
             "SQLite": SqliteVectorStore,
-            # "Redis": RedisVectorStore(),
+            "Redis": RedisVectorStore,
+            "Duckdb": DuckDBVectorStore,
+            "Neo4j": Neo4jVectorStore,
+            "Local_Chromadb": PersistentChromaDBVectorStore,
+            "Local_Qdrant": PersistentQdrantVectorStore,
+            "Cloud_Qdrant": CloudQdrantVectorStore,
+            # "cloud_weaviate": CloudWeaviateVectorStore,
         }
 
         # initialize attr with params
         self.system_context = SystemMessage(content=system_context)
         self.api_key = api_key
-        self.vector_store_db_path = vector_store_db_path
         self.model_name = model_name
+
+        # Vector Store params
+        self.vector_store_db_path = vector_store_db_path
+        self.vector_store_api_key = vector_store_api_key
+        self.vector_store_url = vector_store_url
+        self.vector_store_collection_name = vector_store_collection_name
+        self.vector_store_vector_size = vector_store_vector_size
+        self.vector_store_vectorizer = vector_store_vectorizer
 
         self.conversation = SessionCacheConversation(
             max_size=200, system_context=self.system_context
@@ -345,10 +359,27 @@ footer {
             logging.info(f"chatbot_function error: {e}")
             return chat_id, "", [], history
 
+    def chunk_pdf_by_page(self, file_path: str) -> list[str]:
+        """
+        Splits a PDF into chunks by page and returns the text as a list of strings.
+        """
+        try:
+            doc = fitz.open(file_path)  # Open the PDF
+            chunks = []
 
-def set_conversation_size(self, conversation_size: int):
-    self.conversation.max_size = conversation_size
+            for page_num in range(doc.page_count):
+                page = doc.load_page(page_num)  # Load a specific page
+                text = page.get_text("text")  # Extract text from the page
+                page_doc = Document(content=text)  # Create a Document object
+                chunks.append(page_doc)  # Add the text to the list
 
+            doc.close()  # Close the document after processing
+            return chunks
 
-def set_session_cache_size(self, session_cache_size: int):
-    self.conversation.session_max_size = session_cache_size
+        except Exception as e:
+            print(f"Error processing PDF: {e}")
+            return []
+
+    def load_pdf_from_file_info(self, file):
+        pages = self.chunk_pdf_by_page(file.name)
+        self.vector_store.add_documents(pages)
