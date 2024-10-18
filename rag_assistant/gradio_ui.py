@@ -26,7 +26,7 @@ class Gradio_UI:
         vector_store_url: str = None,
         vector_store_collection_name: str = None,
         vector_store_vector_size: int = None,
-        vector_store_vectorizer: str = None,
+        vector_store_vector_store: str = None,
     ):
         # params
         self.api_key = api_key
@@ -41,7 +41,7 @@ class Gradio_UI:
         self.vector_store_collection_name = vector_store_collection_name
         self.vector_store_vector_size = vector_store_vector_size
         self.vector_store_db_path = vector_store_db_path
-        self.vector_store_vectorizer = vector_store_vectorizer
+        self.vector_store_vector_store = vector_store_vector_store
 
         # Rag Assistant
         self.assistant = RagAssistant(api_key=api_key, llm=llm)
@@ -61,7 +61,7 @@ class Gradio_UI:
         self.load_button = None
         self.input_box = None
         self.file = None
-        self.vectorizer = None
+        self.vector_store = None
 
         # ui variables
         self.user_sessions: Dict[str, List] = {}  # Store chat states per user
@@ -217,16 +217,16 @@ class Gradio_UI:
                 self.file = gr.File(
                     label="Upload JSON File", value=self._init_file_path
                 )
-            self.vectorizer = gr.Dropdown(
-                choices=self.assistant.available_vectorizers.keys(),
-                value=list(self.assistant.available_vectorizers.keys())[0],
-                label="Select vectorizer",
+            self.vector_store = gr.Dropdown(
+                choices=self.assistant.available_vector_stores.keys(),
+                value=list(self.assistant.available_vector_stores.keys())[0],
+                label="Select vector_store",
             )
             self.load_button = gr.Button("load")
             # Place event handlers inside the Blocks context
-            self.vectorizer.change(
-                self.assistant.set_vectorizer,
-                inputs=[self.vectorizer],
+            self.vector_store.change(
+                self.assistant.set_vector_store,
+                inputs=[self.vector_store],
                 outputs=[],
             )
 
@@ -290,6 +290,14 @@ class Gradio_UI:
             llm_kwargs=llm_kwargs,
         )
 
+        conversation_dict = self.assistant.conversation.session_to_dict()
+
+        return (
+            conversation_dict,
+            conversation_dict,
+            "",
+        )
+
     def _change_llm(self, llm):
         """Sets the selected LLM and updates the available models."""
         self.assistant.set_llm(llm)
@@ -337,7 +345,6 @@ class Gradio_UI:
             # Safely extract the current data or initialize an empty list
             current_data = self.data_frame.value
 
-            print(f"current_data: {current_data}")
             # Ensure the data is a list of lists
             current_data["data"] = self.documents
 

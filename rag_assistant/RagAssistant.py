@@ -68,7 +68,7 @@ class RagAssistant:
         vector_store_url: str = None,
         vector_store_collection_name: str = None,
         vector_store_vector_size: int = None,
-        vector_store_vectorizer: str = None,
+        vector_store_vector_store: str = None,
     ):
         logging.info("Initializing... this will take a moment.")
 
@@ -81,18 +81,18 @@ class RagAssistant:
             "anthropic": AnthropicModel,
         }
 
-        # Available Vectorizers
-        self.available_vectorizers = {
-            "Doc2Vec": Doc2VecVectorStore(),
-            "TF-IDF": TfidfVectorStore(),
-            "SQLite": SqliteVectorStore(db_path="/tmp/db.db"),
+        # Available vector_stores
+        self.available_vector_stores = {
+            "Doc2Vec": Doc2VecVectorStore,
+            "TF-IDF": TfidfVectorStore,
+            "SQLite": SqliteVectorStore,
             # "Redis": RedisVectorStore(),
         }
 
         # initialize attr with params
         self.system_context = SystemMessage(content=system_context)
         self.api_key = api_key
-        self.db_path = self.vector_store_db_path
+        self.vector_store_db_path = vector_store_db_path
         self.model_name = model_name
 
         self.conversation = SessionCacheConversation(
@@ -115,7 +115,7 @@ class RagAssistant:
 
         self.model_name = model_name
         self.set_model(model_name)
-        self.set_vectorizer(vectorstore)
+        self.set_vector_store(vectorstore)
         self.set_llm(llm)
         self.set_model(model_name)
 
@@ -184,14 +184,14 @@ footer {
         self.model_name = provider_model_choice
         self.llm.name = self.model_name
 
-    def set_vectorizer(self, vectorizer: str):
-        chosen_vectorizer = self.available_vectorizers.get(vectorizer, None)
+    def set_vector_store(self, vector_store: str, vector_store_kwargs: dict = {}):
+        chosen_vector_store = self.available_vector_stores.get(vector_store, None)
 
-        if chosen_vectorizer is None:
+        if chosen_vector_store is None:
             raise ValueError(
-                f"Vectorizer '{vectorizer}' is not supported. Choose from {self.available_vectorizers.keys()}"
+                f"vector_store '{vector_store}' is not supported. Choose from {self.available_vector_stores.keys()}"
             )
-        self.vector_store = chosen_vectorizer
+        self.vector_store = chosen_vector_store(**vector_store_kwargs)
 
     def load_json_from_file_info(self, file):
         self._load_and_filter_json(file.name)
