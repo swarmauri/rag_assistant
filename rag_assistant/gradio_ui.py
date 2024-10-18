@@ -305,7 +305,7 @@ class Gradio_UI:
 
         if isinstance(content, str):  # TXT case
             self.documents = content
-            return (gr.update(value=content, visible=True),)
+            return gr.update(value=content, visible=True)
 
         else:
             return "Unsupported file type."
