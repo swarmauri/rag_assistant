@@ -296,26 +296,6 @@ class Gradio_UI:
                 outputs=[self.file_upload, self.content_display],
             )
 
-    def _on_file_upload(self, file):
-        """Handle file upload and show appropriate editor."""
-        content = ""
-
-        with open(file, "r") as f:
-            content = f.read()
-
-        if isinstance(content, str):  # TXT case
-            self.documents = content
-            return gr.update(value=content, visible=True)
-
-        else:
-            return "Unsupported file type."
-
-    def _on_update_and_upload(self, content):
-        """Handle saving edits based on the file type."""
-        self.assistant.add_to_vector_store(content)
-        gr.Info("Successfully updated and added to store")
-        return None, ""
-
     # -------------------------------------------------- HANDLERS ------------------------------------------------------
 
     def _get_user_session(self, user_id: str) -> List:
