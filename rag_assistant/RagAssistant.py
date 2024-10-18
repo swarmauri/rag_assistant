@@ -383,3 +383,22 @@ footer {
     def load_pdf_from_file_info(self, file):
         pages = self.chunk_pdf_by_page(file.name)
         self.vector_store.add_documents(pages)
+
+    def add_to_vector_store(self, content):
+        if isinstance(content, str):
+            document = Document(content=content)
+            self.vector_store.add_document(document)
+        elif isinstance(content, dict):
+            for key, value in content.items():
+                document = Document(content=f"{key}: {value}")
+                self.vector_store.add_documents([document])
+        elif isinstance(content, (list, set, tuple)):
+            for item in content:
+                if not isinstance(item, str):
+                    item = str(item)
+                document = Document(content=item)
+                self.vector_store.add_documents([document])
+        else:
+            # If content is not an iterable or dict, convert it to string and add
+            document = Document(content=str(content))
+            self.vector_store.add_documents([document])

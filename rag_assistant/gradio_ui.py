@@ -260,12 +260,12 @@ class Gradio_UI:
                 outputs=[self.file, self.data_frame],
             )
 
-    def _retrieval_table(self):
+    def _doc_edits(self):
         """Build the UI to load, edit, and save different file types."""
         with gr.Blocks(css=self.assistant.css) as self.retrieval_interface:
             with gr.Row():
                 self.file_upload = gr.File(
-                    label="Upload File (CSV, JSON, TXT)", type="filepath"
+                    label="Upload File (CSV, JSON, TXT)",
                 )
 
             with gr.Row():
@@ -275,20 +275,9 @@ class Gradio_UI:
                     interactive=True,
                     visible=False,
                 )
-                self.json_display = gr.Code(
-                    label="JSON Editor",
-                    language="json",
-                    interactive=True,
-                    visible=False,
-                )
-                self.dataframe_display = gr.Dataframe(
-                    # headers=[],
-                    interactive=True,
-                    visible=False,
-                )
 
             with gr.Row():
-                self.save_button = gr.Button("Save Edits")
+                self.save_button = gr.Button("Update & Upload")
 
             # Event handlers for file upload and save button
             self.file_upload.change(
@@ -296,19 +285,15 @@ class Gradio_UI:
                 inputs=[self.file_upload],
                 outputs=[
                     self.content_display,
-                    self.json_display,
-                    self.dataframe_display,
                 ],
             )
 
             self.save_button.click(
-                fn=self._on_save_edits,
+                fn=self._on_update_and_upload,
                 inputs=[
                     self.content_display,
-                    self.json_display,
-                    self.dataframe_display,
                 ],
-                outputs=[],
+                outputs=[self.file_upload, self.content_display],
             )
 
     def _on_file_upload(self, file):
@@ -318,78 +303,18 @@ class Gradio_UI:
         with open(file, "r") as f:
             content = f.read()
 
-        if isinstance(content, list):  # CSV case (loaded as list of dicts)
+        if isinstance(content, str):  # TXT case
             self.documents = content
-            return (
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(value=content, visible=True),
-            )
-
-        elif isinstance(content, dict):  # JSON case
-            self.documents = content
-            return (
-                gr.update(visible=False),
-                gr.update(value=json.dumps(content, indent=2), visible=True),
-                gr.update(visible=False),
-            )
-
-        elif isinstance(content, str):  # TXT case
-            self.documents = content
-            return (
-                gr.update(value=content, visible=True),
-                gr.update(visible=False),
-                gr.update(visible=False),
-            )
+            return (gr.update(value=content, visible=True),)
 
         else:
             return "Unsupported file type."
 
-    def _on_save_edits(self, text_content, json_content, dataframe_content):
+    def _on_update_and_upload(self, content):
         """Handle saving edits based on the file type."""
-        if text_content:
-            with open("edited_file.txt", "w") as f:
-                f.write(text_content)
-            print("TXT file saved!")
-
-        elif json_content:
-            with open("edited_file.json", "w") as f:
-                json.dump(json.loads(json_content), f, indent=2)
-            print("JSON file saved!")
-
-        elif dataframe_content:
-            df = pd.DataFrame(dataframe_content)
-            df.to_csv("edited_file.csv", index=False)
-            print("CSV file saved!")
-
-    # def _retrieval_table(self):
-    #     """retrieve table tab"""
-    #     with gr.Blocks(css=self.assistant.css) as self.retrieval_table:
-    #         with gr.Row():
-    #             self.retrieval_table = gr.Dataframe(
-    #                 headers=["Document", "Status", "Timestamp"],
-    #                 col_count=(3, "fixed"),
-    #                 interactive=True,
-    #                 wrap=True,
-    #                 line_breaks=True,
-    #                 elem_id="document-table-container",
-    #                 # height="800",
-    #             )
-    #         with gr.Row():
-    #             self.save_df = gr.Button("Save Edits")
-    #             self.save_df.click(
-    #                 fn=self._on_save_edits,
-    #                 inputs=[self.retrieval_table],
-    #                 outputs=[self.retrieval_table],
-    #             )
-
-    # def _on_save_edits(self, edited_data):
-    #     """Handles saving edits made to the document table."""
-    #     # Implement logic to save the edited data
-    #     # For example, you can update the self.documents list or save to a file
-    #     self.documents = edited_data["data"]
-    #     print("Edits saved!")
-    #     return gr.update(value=edited_data)
+        self.assistant.add_to_vector_store(content)
+        gr.Info("Successfully updated and added to store")
+        return None, ""
 
     # -------------------------------------------------- HANDLERS ------------------------------------------------------
 
@@ -525,8 +450,8 @@ class Gradio_UI:
                     self._document_table()
                     self._document_event_handler()
 
-                with gr.Tab("Retrieval Table", visible=self._show_documents_tab):
-                    self._retrieval_table()
+                with gr.Tab("Document Edits", visible=self._show_documents_tab):
+                    self._doc_edits()
 
             self.save_button.click(self._on_save_settings)
 
