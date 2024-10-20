@@ -6,6 +6,10 @@ class DocumentEditsTab:
         self.assistant = assistant
         self.documents = []
 
+        self.file_upload = None
+        self.content_display = None
+        self.save_button = None
+
     def document_edit_tab(self):
         """Build the UI to load, edit, and save different file types."""
         with gr.Blocks(css=self.assistant.css) as self.retrieval_interface:
@@ -20,7 +24,6 @@ class DocumentEditsTab:
         with gr.Row():
             self.file_upload = gr.File(
                 label="Upload File (CSV, JSON, TXT)",
-                file_count="multiple",
             )
 
     def _doc_editor(self):
@@ -61,6 +64,7 @@ class DocumentEditsTab:
         """Handle file upload and show appropriate editor."""
         content = ""
 
+        print("File: ", file)
         with open(file, "r") as f:
             content = f.read()
 

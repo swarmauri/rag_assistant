@@ -1,5 +1,5 @@
 from RagAssistant import RagAssistant
-from gradio_interface import launch
+from gradio_ui import GradioUI
 
 
 def main():
@@ -107,9 +107,9 @@ def main():
     # If params then modify Assistant's config
     launch_kwargs = {}
     if args.share:
-        launch_kwargs.update({"share": args.share})
+        launch_kwargs.update({"share_url": args.share})
     if args.server_name:
-        launch_kwargs.update({"server_name": args.server_name})
+        launch_kwargs.update({"title": args.server_name})
 
     if args.show_api_key:
         launch_kwargs.update({"show_api_key": args.show_api_key})
@@ -119,7 +119,7 @@ def main():
         launch_kwargs.update({"show_system_context": args.show_system_context})
 
     if args.documents_file_path:
-        launch_kwargs.update({"documents_file_path": args.documents_file_path})
+        launch_kwargs.update({"_init_file_path": args.documents_file_path})
 
     if args.show_documents_tab == True:
         launch_kwargs.update({"show_documents_tab": args.show_documents_tab})
@@ -131,8 +131,9 @@ def main():
     # else:
     # launch_kwargs.update({'favicon_path': "favicon-32x32.png"})
 
-    assistant.initialize_agent()
-    launch(assistant=assistant, **launch_kwargs)
+    # Create Gradio UI
+    ui = GradioUI(**launch_kwargs, api_key=api_key, llm="openai")
+    ui.launch()
 
 
 if __name__ == "__main__":

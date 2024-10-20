@@ -67,7 +67,7 @@ class ChatTab:
 
         # Clear button now resets the user's session state
         self.clear_button.click(
-            fn=lambda: ([], []),
+            fn=lambda: (self.assistant.conversation.clear_history(), [], []),
             outputs=[self.chatbot, self.chat_id],
         )
 

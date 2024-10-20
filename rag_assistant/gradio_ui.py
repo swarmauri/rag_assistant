@@ -12,7 +12,7 @@ from gradio_tabs.document_tab import DocumentTab
 from gradio_tabs.document_edits_tab import DocumentEditsTab
 
 
-class Gradio_UI:
+class GradioUI:
     def __init__(
         self,
         api_key: str,
@@ -24,6 +24,7 @@ class Gradio_UI:
         share_url=False,
         show_api_key=True,
         show_documents_tab=True,
+        show_document_edit_tab=True,
         show_provider_llm=True,
         show_provider_model=True,
         show_system_context=True,
@@ -57,38 +58,21 @@ class Gradio_UI:
         self.allowed_models = self.assistant.get_allowed_models()
 
         # toggle values
-        self._show_api_key = show_api_key
         self._show_documents_tab = show_documents_tab
-        self._show_provider_llm = show_provider_llm
-        self._show_provider_model = show_provider_model
-        self._show_system_context = show_system_context
-        self._show_documents_tab = show_documents_tab
-
-        # gradio components
-        self.load_button = None
-        self.input_box = None
-        self.file = None
-        self.vector_store = None
-
-        # ui variables
-        self.user_sessions: Dict[str, List] = {}  # Store chat states per user
-        self.documents = []
-        self._init_file_path = None
-        self.data_frame = None
-        self.save_button = None
-        self.save_df = None
+        self._show_document_edit_tab = show_documents_tab
 
         # Tabs
         self.chat_tab = ChatTab(
+            show_api_key=show_api_key,
+            show_system_context=show_system_context,
+            show_provider_llm=show_provider_llm,
+            show_provider_model=show_provider_model,
             assistant=self.assistant,
-            api_key=self.api_key,
-            show_system_context=self._show_system_context,
-            show_api_key=self._show_api_key,
+            api_key=api_key,
         ).chat_tab
 
         self.document_tab = DocumentTab(
             assistant=self.assistant,
-            show_documents_tab=self._show_documents_tab,
             _init_file_path=_init_file_path,
         ).document_tab
 
@@ -98,10 +82,6 @@ class Gradio_UI:
 
         # App
         self.app = self._layout()
-
-    # ------------------------------------------------------------ TABS AND THEIR COMPONENTS  ------------------------------------------------
-
-    # -------------------------------------------------- HANDLERS ------------------------------------------------------
 
     # ----------------------------------- LAYOUT (arrangement of the interface) ---------------------------
 

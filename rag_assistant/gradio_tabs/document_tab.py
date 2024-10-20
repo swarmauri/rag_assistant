@@ -2,22 +2,26 @@ import gradio as gr
 
 
 class DocumentTab(gr.Interface):
-    def __init__(self, assistant, show_documents_tab, _init_file_path=None):
+    def __init__(self, assistant, _init_file_path=None):
         self.assistant = assistant
-        self.show_documents_tab = show_documents_tab
         self._init_file_path = _init_file_path
 
         self.documents = []
 
-    # ------------------------------ Tab ------------------------------
+        self.file = None
+        self.vector_store = None
+        self.load_button = None
+        self.data_frame = None
+
+    # ------------------------------ TAB ------------------------------
     def document_tab(self):
         with gr.Blocks(css=self.assistant.css) as self.document_table:
-            self._doc_upload()
-            self._doc_table()
+            self._document_upload()
+            self._document_table()
             self._document_event_handler()
 
     # -------------------------------------------------- COMPONENTS ------------------------------------------------------
-    def _doc_upload(self):
+    def _document_upload(self):
         with gr.Row():
             self.file = gr.File(
                 label="Upload JSON/PDF/txt File",
@@ -38,7 +42,7 @@ class DocumentTab(gr.Interface):
             outputs=[],
         )
 
-    def _doc_table(self):
+    def _document_table(self):
         with gr.Row():
             if self._init_file_path:
                 df = self.assistant._load_and_filter_json(self._init_file_path)

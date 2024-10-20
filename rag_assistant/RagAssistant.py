@@ -63,6 +63,7 @@ class RagAssistant:
         vectorstore="Doc2Vec",
         model_name: str = None,
         system_context: str = "You are a helpful assistant.",
+        db_path: str = None,
         # vector store params
         vector_store_db_path: str = "prompt_responses.db",
         vector_store_api_key: str = None,
