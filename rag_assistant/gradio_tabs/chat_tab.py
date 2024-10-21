@@ -192,7 +192,7 @@ class ChatTab:
             )
 
         # Set the conversation for the assistant
-        self.assistant.conversation = self.chat_idx[chat_id]
+        self.assistant.agent.conversation = self.chat_idx[chat_id]
 
         llm_kwargs = {
             "temperature": self.settings["Temperature"].value,
@@ -206,7 +206,7 @@ class ChatTab:
             llm_kwargs=llm_kwargs,
         )
 
-        conversation_dict = self.assistant.conversation.session_to_dict()
+        conversation_dict = self.assistant.agent.conversation.session_to_dict()
         end_datetime = datetime.now()
 
         self.assistant.sql_log(
