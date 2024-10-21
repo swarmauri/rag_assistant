@@ -1,3 +1,5 @@
+from datetime import datetime
+import uuid
 import gradio as gr
 
 
@@ -23,6 +25,7 @@ class ChatTab:
         self.chat = None
 
         # gradio components
+        self.chat_idx = {}
         self.chat_id = None
         self.chatbot = None
         self.input_box = None
@@ -38,7 +41,7 @@ class ChatTab:
         """Modified Chat Tab to handle user-specific state."""
         with gr.Row():
             # Each session state is user-specific
-            self.chat_id = gr.State([])
+            self.chat_id = gr.State()
 
             self.chatbot = gr.Chatbot(
                 label="Chat History",
@@ -62,7 +65,7 @@ class ChatTab:
         self.send_button.click(
             fn=self._reply_to_chat_handler,
             inputs=[self.input_box, self.chat_id],
-            outputs=[self.chatbot, self.chat_id, self.input_box],
+            outputs=[self.chat_id, self.chatbot, self.input_box],
         )
 
         # Clear button now resets the user's session state
@@ -171,25 +174,54 @@ class ChatTab:
         # Update the LLM dropdown and models dynamically
         return gr.update(choices=self.allowed_models, value=self.allowed_models[0])
 
-    def _reply_to_chat_handler(self, message, chat_history):
+    def _reply_to_chat_handler(self, message, chat_id):
         """Chat handler
         Processes the user message and adds it to the chat."""
+        if not chat_id:
+            chat_id = str(uuid.uuid4())
+
+        # Datetime for logging
+        start_datetime = datetime.now()
+
+        # chat_id is the user's session state
+        if chat_id not in self.chat_idx:
+            self.chat_idx[chat_id] = self.assistant.new_conversation(
+                max_size=self.settings["Conversation size"].value,
+                system_message=self.llm_variables["System Context"].value,
+                session_max_size=self.settings["Session Cache size"].value,
+            )
+
+        # Set the conversation for the assistant
+        self.assistant.conversation = self.chat_idx[chat_id]
+
         llm_kwargs = {
             "temperature": self.settings["Temperature"].value,
             "max_tokens": self.settings["Max tokens"].value,
         }
 
         # Get the response from the assistant
-        self.assistant.agent.exec(
+        response = self.assistant.agent.exec(
             input_data=message,
             top_k=self.settings["Top K elements"].value,
             llm_kwargs=llm_kwargs,
         )
 
         conversation_dict = self.assistant.conversation.session_to_dict()
+        end_datetime = datetime.now()
+
+        self.assistant.sql_log(
+            self=self.assistant,
+            db_path=self.assistant.db_path,
+            conversation_id=self.assistant.agent.conversation.id,
+            model_name=self.assistant.agent.name,
+            prompt=message,
+            response=response,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+        )
 
         return (
-            conversation_dict,
+            chat_id,
             conversation_dict,
             "",
         )

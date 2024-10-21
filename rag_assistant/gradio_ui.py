@@ -29,12 +29,8 @@ class GradioUI:
         show_provider_model=True,
         show_system_context=True,
         # vector store params
-        vector_store_db_path: str = "prompt_responses.db",
-        vector_store_collection_name: str = "RAG Prompt Responses",
         vector_store_vector_size: int = 1024,
         vector_store_vectorizer: str = None,
-        vector_store_api_key: str = None,
-        vector_store_url: str = None,
     ):
         # params
         self.api_key = api_key
@@ -47,11 +43,7 @@ class GradioUI:
         self.assistant = RagAssistant(
             api_key=api_key,
             llm=llm,
-            # rag params
-            vector_store_db_path=vector_store_db_path,
-            vector_store_api_key=vector_store_api_key,
-            vector_store_url=vector_store_url,
-            vector_store_collection_name=vector_store_collection_name,
+            # vector store params
             vector_store_vector_size=vector_store_vector_size,
             vector_store_vectorizer=vector_store_vectorizer,
         )
