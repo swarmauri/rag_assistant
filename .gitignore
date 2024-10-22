@@ -3,3 +3,4 @@
 /workbook
 prompt_responses.db
 */*.pem
+.gradio/certificate.pem
