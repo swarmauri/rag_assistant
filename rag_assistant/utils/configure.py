@@ -88,7 +88,14 @@ def read_config_file(config_file: None) -> Dict[str, Any]:
             raise FileNotFoundError(f"Config file {config_file} not found")
 
         with open(config_file, "r") as file:
-            config = yaml.safe_load(file)
+            if config_file.endswith(".yaml") or config_file.endswith(".yml"):
+                config = yaml.safe_load(file)
+            elif config_file.endswith(".json"):
+                config = json.load(file)
+            else:
+                raise ValueError(
+                    "Unsupported config file format. Use .yaml, .yml, or .json"
+                )
         return config
 
     config_path_yaml = os.path.join(os.getcwd(), "config.yaml")
