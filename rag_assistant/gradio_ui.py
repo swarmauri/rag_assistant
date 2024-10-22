@@ -16,7 +16,6 @@ class GradioUI:
         api_key: str,
         llm: str = "openai",
         model_name: str = None,
-        system_context: str = "You are a helpful assistant.",
         db_path: str = "conversations.db",
         vector_store_vector_size: int = 1024,
         vector_store_vectorizer: str = None,
@@ -25,6 +24,9 @@ class GradioUI:
         self.api_key = api_key
         self.llm = llm
         self.model_name = model_name
+        self.system_context = config.get(
+            "system_context", "You are a helpful assistant."
+        )
 
         # Gradio UI settings
         self.title = config.get("title", "RAG Assistant")
@@ -41,7 +43,7 @@ class GradioUI:
             "api_key": api_key,
             "llm": llm,
             "model_name": model_name,
-            "system_context": system_context,
+            "system_context": self.system_context,
             "db_path": db_path,
             "vector_store_vector_size": vector_store_vector_size,
             "vector_store_vectorizer": vector_store_vectorizer,
