@@ -40,28 +40,30 @@ head = """<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA
 
 
 class RagAssistant:
+    available_llms = {
+        "openai": OpenAIModel,
+        "groq": GroqModel,
+        "mistral": MistralModel,
+        "gemini": GeminiProModel,
+        "anthropic": AnthropicModel,
+    }
+
     def __init__(
         self,
         api_key: str,
         llm: str,
+        system_context: str,
+        db_path: str,
         vectorstore="Doc2Vec",
         model_name: str = None,
-        system_context: str = "You are a helpful assistant.",
-        db_path: str = "conversations.db",
         # vector store params
-        vector_store_vectorizer: str = None,
         vector_store_vector_size: int = 1024,
+        vector_store_vectorizer: str = None,
     ):
         logging.info("Initializing... this will take a moment.")
 
         # Available LLMs
-        self.available_llms = {
-            "openai": OpenAIModel,
-            "groq": GroqModel,
-            "mistral": MistralModel,
-            "gemini": GeminiProModel,
-            "anthropic": AnthropicModel,
-        }
+        # self.available_llms = available_llms
 
         # Available vector_stores
         self.available_vector_stores = {
@@ -82,6 +84,7 @@ class RagAssistant:
         )
 
         self.sql_log = sql_log
+        self.uploaded_files = []
         self.agent = None
 
         # self.long_term_memory_df = None
@@ -121,14 +124,18 @@ footer {
         self._init_file_path = None
 
     def initialize_agent(self):
-        VS = self.vector_store
-        self.agent = RagAgent(
-            name="Rag",
-            system_context=self.system_context,
-            llm=self.llm,
-            conversation=self.conversation,
-            vector_store=VS,
-        )
+        kwargs = {
+            "name": "Rag",
+            "system_context": self.system_context,
+            "llm": self.llm,
+            "conversation": self.conversation,
+            "vector_store": self.vector_store,
+        }
+
+        if self.model_name is not None:
+            kwargs["model_name"] = self.model_name
+
+        self.agent = RagAgent(**kwargs)
         return self.agent
 
     def get_llm_name(self):
@@ -217,112 +224,6 @@ footer {
         except Exception as e:
             # error_fn("preprocess_documents failed: {e}")
             logging.info(f"preprocess_documents: {e}")
-
-    def save_df(self, df):
-        documents = self.dataframe_to_documents(df)
-        self.agent.vector_store.documents = []
-        self.agent.vector_store.add_documents(documents)
-        self.long_term_memory_df = self.preprocess_documents(documents)
-        return self.long_term_memory_df
-
-    def dataframe_to_documents(self, df):
-        documents = []
-        for index, row in df.iterrows():
-            row_dict = row.to_dict()
-            id = row_dict.pop("id", "")
-            content = row_dict.pop("content", "")
-            metadata = row_dict  # remaining data becomes metadata
-
-            # Convert the row to dictionary and create a DocumentBase instance
-
-            document = Document(id=id, content=content, metadata=metadata)
-            documents.append(document)
-        return documents
-
-    def clear_chat(self, chat_id):
-        # We could clear, but if we create a new instance, we get a new conversation id
-        try:
-            del self.chat_idx[chat_id]
-        except KeyError:
-            pass
-        return chat_id, "", [], []
-
-    def chatbot_function(
-        self,
-        chat_id,
-        message,
-        api_key: str = None,
-        model_name: str = None,
-        system_context: str = None,
-        fixed_retrieval: bool = True,
-        top_k: int = 5,
-        temperature: int = 1,
-        max_tokens: int = 256,
-        conversation_size: int = 2,
-        session_cache_size: int = 2,
-    ):
-        try:
-            if not chat_id:
-                chat_id = str(uuid.uuid4())
-            start_datetime = datetime.now()
-
-            # Set additional parameters
-            self.api_key = api_key
-            self.set_model(model_name)
-
-            # Set Conversation Size
-            self.agent.system_context = system_context
-
-            if chat_id not in self.chat_idx:
-                self.chat_idx[chat_id] = SessionCacheConversation(
-                    max_size=conversation_size,
-                    system_message_content=system_context,
-                    session_cache_max_size=session_cache_size,
-                )
-
-            self.agent.conversation = self.chat_idx[chat_id]
-
-            # Predict
-            try:
-                response = self.agent.exec(
-                    message,
-                    top_k=top_k,
-                    fixed=fixed_retrieval,
-                    model_kwargs={"temperature": temperature, "max_tokens": max_tokens},
-                )
-            except Exception as e:
-                logging.info(f"chatbot_function agent error: {e}")
-
-            # Update Retrieval Document Table
-            self.last_recall_df = self.preprocess_documents(self.agent.last_retrieved)
-
-            # Get History
-
-            history = [
-                each["content"] for each in self.agent.conversation.session_to_dict()
-            ]
-            if len(history) > 0:
-                history = [
-                    (history[i], history[i + 1]) for i in range(0, len(history), 2)
-                ]
-
-            # SQL Log
-            end_datetime = datetime.now()
-            sql_log(
-                self.agent.conversation.id,
-                model_name,
-                message,
-                response,
-                start_datetime,
-                end_datetime,
-            )
-
-            return chat_id, "", self.last_recall_df, history
-        except Exception as e:
-            # error_fn(f"chatbot_function error: {e}")
-            self.agent.conversation._history.pop(0)
-            logging.info(f"chatbot_function error: {e}")
-            return chat_id, "", [], history
 
     def chunk_pdf_by_page(self, file_path: str) -> list[str]:
         """

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Dict
 import uuid
 import gradio as gr
 
@@ -8,18 +9,12 @@ class ChatTab:
         self,
         assistant,
         api_key: str,
-        show_api_key=True,
-        show_provider_llm=True,
-        show_provider_model=True,
-        show_system_context=True,
+        config: Dict[str, str],
     ):
         self.assistant = assistant
         self.api_key = api_key
 
-        self._show_system_context = show_system_context
-        self._show_api_key = show_api_key
-        self._show_provider_llm = show_provider_llm
-        self._show_provider_model = show_provider_model
+        self.config = config
 
         # Gradio UI settings
         self.chat = None
@@ -76,51 +71,59 @@ class ChatTab:
 
     def _additional_inputs_component(self):
         """Chat Tab; Additional settings component"""
-        with gr.Accordion("Credentials", open=False):
+        with gr.Accordion(
+            "Credentials",
+            open=False,
+            visible=self.config.get("show_credentials", False),
+        ):
+            credentials = self.config.get("credentials", {})
             self.additional_inputs = {
                 "API Key": gr.Textbox(
                     label="API Key",
                     value=self.api_key or "Enter your API Key",
-                    visible=self._show_api_key,
-                ),
-                "Fixed Retrieval": gr.Checkbox(
-                    label="Fixed Retrieval",
-                    value=True,
-                    interactive=True,
+                    visible=credentials.get("show_api_key", False),
                 ),
             }
 
     def _llm_variables_component(self):
         """Chat Tab; LLM vars component"""
-        with gr.Accordion("LLM Variables", open=False):
+        with gr.Accordion(
+            "LLM Variables",
+            open=False,
+            visible=self.config.get("show_llm_variables", True),
+        ):
+            config_llm_variables = self.config.get("llm_variables", {})
             self.llm_variables = {
                 "LLM": gr.Dropdown(
                     value=self.assistant.get_llm_name(),
                     choices=list(self.assistant.available_llms.keys()),
                     label="LLM",
                     info="Select the language model",
-                    interactive=True,
-                    visible=self._show_provider_llm,
+                    visible=config_llm_variables.get("show_llm", True),
+                    interactive=config_llm_variables.get("interact_llm", True),
                 ),
                 "Model": gr.Dropdown(
                     value=self.assistant.agent.llm.name,
                     choices=self.assistant.agent.llm.allowed_models,
                     label="Model",
                     info="Select openai model",
-                    interactive=True,
-                    visible=self._show_provider_model,
+                    visible=config_llm_variables.get("show_model", True),
+                    interactive=config_llm_variables.get("interact_model", True),
                 ),
                 "System Context": gr.Textbox(
                     label="System Context",
                     value=self.assistant.system_context.content,
-                    visible=self._show_system_context,
+                    visible=config_llm_variables.get("show_system_context", True),
                 ),
             }
         self._llm_event_handlers()
 
     def _settings_component(self):
         """Chat Tab; Settings component"""
-        with gr.Accordion("Settings", open=False):
+        with gr.Accordion(
+            "Settings", open=False, visible=self.config.get("show_settings", True)
+        ):
+            config_settings = self.config.get("settings", {})
             self.settings = {
                 "Top K elements": gr.Slider(
                     label="Top K",
@@ -128,7 +131,8 @@ class ChatTab:
                     minimum=0,
                     maximum=100,
                     step=5,
-                    interactive=True,
+                    visible=config_settings.get("show_top_k", True),
+                    interactive=config_settings.get("interact_top_k", True),
                 ),
                 "Temperature": gr.Slider(
                     label="Temperature",
@@ -136,7 +140,8 @@ class ChatTab:
                     minimum=0.0,
                     maximum=100.0,
                     step=0.1,
-                    interactive=True,
+                    visible=config_settings.get("show_temperature", True),
+                    interactive=config_settings.get("interact_temperature", True),
                 ),
                 "Max tokens": gr.Slider(
                     label="Max tokens",
@@ -144,7 +149,8 @@ class ChatTab:
                     minimum=256,
                     maximum=4096,
                     step=64,
-                    interactive=True,
+                    visible=config_settings.get("show_max_tokens", True),
+                    interactive=config_settings.get("interact_max_tokens", True),
                 ),
                 "Conversation size": gr.Slider(
                     label="Conversation size",
@@ -152,7 +158,8 @@ class ChatTab:
                     minimum=2,
                     maximum=36,
                     step=2,
-                    interactive=True,
+                    visible=config_settings.get("show_conversation_size", True),
+                    interactive=config_settings.get("interact_conversation_size", True),
                 ),
                 "Session Cache size": gr.Slider(
                     label="Session Cache size",
@@ -160,7 +167,10 @@ class ChatTab:
                     minimum=2,
                     maximum=36,
                     step=2,
-                    interactive=True,
+                    visible=config_settings.get("show_session_cache_size", True),
+                    interactive=config_settings.get(
+                        "interact_session_cache_size", True
+                    ),
                 ),
             }
 
