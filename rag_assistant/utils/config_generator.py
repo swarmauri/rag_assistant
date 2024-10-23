@@ -2,7 +2,13 @@ import json
 import yaml
 import os
 
-PATH = "./rag_assistant/templates/config_template.json"
+# Determine the absolute path to the template file
+current_dir = os.path.dirname(os.path.abspath(__file__))
+PATH = os.path.abspath(
+    os.path.join(current_dir, "../", "templates", "config_template.json")
+)
+
+print(os.getcwd())
 
 
 def generate_config_json(output_path):
