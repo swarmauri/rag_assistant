@@ -38,7 +38,7 @@ jobs:
           LATEST_WHL=$(ls dist/*.whl | sort -V | tail -n 1)
           python -m pip install "$LATEST_WHL"[full]
       - name: Publish to PyPI
-        if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
+        if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/master')
         uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
           user: __token__
