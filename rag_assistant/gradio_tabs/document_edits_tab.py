@@ -57,13 +57,13 @@ class DocumentEditsTab:
             inputs=[
                 self.content_display,
             ],
-            outputs=[self.file_upload, self.content_display],
+            outputs=[self.content_display],
         )
 
     def _on_file_upload(self, file):
         """Handle file upload and show appropriate editor."""
         content = ""
-
+        self.file = file
         print("File: ", file)
         with open(file, "r") as f:
             content = f.read()
@@ -79,4 +79,4 @@ class DocumentEditsTab:
         """Handle saving edits based on the file type."""
         self.assistant.add_to_vector_store(content)
         gr.Info("Successfully updated and added to store")
-        return None, gr.update(value="", visible=False)
+        return gr.update(value="", visible=False)

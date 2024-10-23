@@ -1,12 +1,7 @@
-import logging
-import pandas as pd
-import json
-from typing import Dict, List
-
+from typing import Dict
 import gradio as gr
 
-from RagAssistant import RagAssistant
-
+from rag_assistant.RagAssistant import RagAssistant
 from gradio_tabs.chat_tab import ChatTab
 from gradio_tabs.document_tab import DocumentTab
 from gradio_tabs.document_edits_tab import DocumentEditsTab
@@ -15,20 +10,13 @@ from gradio_tabs.document_edits_tab import DocumentEditsTab
 class GradioUI:
     def __init__(
         self,
-        api_key: str,
-        llm: str,
-        model_name: str = None,
-        _init_file_path: str = None,
         # Gradio UI settings
-        title="Rag Assistant",
-        share_url=False,
-        show_api_key=True,
-        show_documents_tab=True,
-        show_document_edit_tab=True,
-        show_provider_llm=True,
-        show_provider_model=True,
-        show_system_context=True,
-        # vector store params
+        config: Dict,
+        # RAG Assistant params
+        api_key: str,
+        llm: str = "openai",
+        model_name: str = None,
+        db_path: str = "conversations.db",
         vector_store_vector_size: int = 1024,
         vector_store_vectorizer: str = None,
     ):
@@ -36,36 +24,41 @@ class GradioUI:
         self.api_key = api_key
         self.llm = llm
         self.model_name = model_name
-        self.title = title
-        self.share_url = share_url
+        self.system_context = config.get(
+            "system_context", "You are a helpful assistant."
+        )
+
+        # Gradio UI settings
+        self.title = config.get("title", "RAG Assistant")
+        self.share_url = config.get("share_url", False)
+        self._init_file_path = config.get("init_file_path", None)
+        self._show_chat_tab = config.get("show_chat_tab", True)
+        self._show_documents_tab = config.get("show_documents_tab", True)
+        self._show_document_edit_tab = config.get("show_document_edit_tab", True)
+        self.chat_tab_config = config.get("chat_tab_config", {})
+        self.document_tab_config = config.get("document_tab_config", {})
 
         # Rag Assistant
-        self.assistant = RagAssistant(
-            api_key=api_key,
-            llm=llm,
-            # vector store params
-            vector_store_vector_size=vector_store_vector_size,
-            vector_store_vectorizer=vector_store_vectorizer,
-        )
+        self.assistant_kwargs = {
+            "api_key": api_key,
+            "llm": llm,
+            "model_name": model_name,
+            "system_context": self.system_context,
+            "db_path": db_path,
+            "vector_store_vector_size": vector_store_vector_size,
+            "vector_store_vectorizer": vector_store_vectorizer,
+        }
+        self.assistant = RagAssistant(**self.assistant_kwargs)
         self.allowed_models = self.assistant.get_allowed_models()
-
-        # toggle values
-        self._show_documents_tab = show_documents_tab
-        self._show_document_edit_tab = show_documents_tab
 
         # Tabs
         self.chat_tab = ChatTab(
-            show_api_key=show_api_key,
-            show_system_context=show_system_context,
-            show_provider_llm=show_provider_llm,
-            show_provider_model=show_provider_model,
-            assistant=self.assistant,
-            api_key=api_key,
+            assistant=self.assistant, api_key=api_key, config=self.chat_tab_config
         ).chat_tab
 
         self.document_tab = DocumentTab(
             assistant=self.assistant,
-            _init_file_path=_init_file_path,
+            config=self.document_tab_config,
         ).document_tab
 
         self.document_edit_tab = DocumentEditsTab(
@@ -81,7 +74,7 @@ class GradioUI:
         """Defines the overall layout of the application."""
         with gr.Blocks(css=self.assistant.css, title=self.title) as self.app:
             with gr.Tabs():
-                with gr.Tab("Chat"):
+                with gr.Tab("Chat", visible=self._show_chat_tab):
                     self.chat_tab()
 
                 with gr.Tab("Documents", visible=self._show_documents_tab):

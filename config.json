@@ -1,0 +1,42 @@
+{
+    "show_chat_tab": true,
+    "chat_tab_config": {
+        "show_credentials": true,
+        "credentials": {
+            "show_api_key": true
+        },
+        "show_llm_variables": true,
+        "llm_variables": {
+            "show_llm": true,
+            "interact_llm": true,
+            "show_model": true,
+            "interact_model": true,
+            "show_system_context": true
+        },
+        "show_settings": true,
+        "settings": {
+            "show_top_k": true,
+            "interact_top_k": true,
+            "show_temperature": true,
+            "interact_temperature": true,
+            "show_max_tokens": true,
+            "interact_max_tokens": true,
+            "show_conversation_size": true,
+            "interact_conversation_size": true,
+            "show_session_cache_size": true,
+            "interact_session_cache_size": true
+        }
+    },
+    "show_document_tab": true,
+    "document_tab_config": {
+        "show_vector_store": true,
+        "interact_vector_store": true,
+        "show_data_frame": true
+    },
+    "show_document_edit_tab": true,
+    "share_url": false,
+    "system_context": "You are a helpful assistant.",
+    "title": "Rag Assistant",
+    "description": "Swarmauri Developer Assistant",
+    "_init_file_path": null
+}

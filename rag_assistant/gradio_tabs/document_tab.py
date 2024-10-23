@@ -1,12 +1,18 @@
+from typing import Dict
+
 import gradio as gr
 
 
 class DocumentTab(gr.Interface):
-    def __init__(self, assistant, _init_file_path=None):
+    def __init__(
+        self,
+        assistant,
+        config: Dict[str, bool],
+        _init_file_path=None,
+    ):
         self.assistant = assistant
+        self.config = config
         self._init_file_path = _init_file_path
-
-        self.documents = []
 
         self.file = None
         self.vector_store = None
@@ -33,6 +39,8 @@ class DocumentTab(gr.Interface):
             choices=self.assistant.available_vector_stores.keys(),
             value=list(self.assistant.available_vector_stores.keys())[0],
             label="Select vector_store",
+            visible=self.config.get("show_vector_store", True),
+            interactive=self.config.get("interact_vector_store", True),
         )
         self.load_button = gr.Button("load")
         # Place event handlers inside the Blocks context
@@ -53,6 +61,7 @@ class DocumentTab(gr.Interface):
                 wrap=True,
                 line_breaks=True,
                 elem_id="document-table-container",
+                visible=self.config.get("show_data_frame", True),
                 # height="700",
                 # value=df,
             )
@@ -78,13 +87,13 @@ class DocumentTab(gr.Interface):
                 "Loaded",
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             ]
-            self.documents.append(new_row)
+            self.assistant.uploaded_files.append(new_row)
 
             # Safely extract the current data or initialize an empty list
             current_data = self.data_frame.value
 
             # Ensure the data is a list of lists
-            current_data["data"] = self.documents
+            current_data["data"] = self.assistant.uploaded_files
 
             self.data_frame.value = current_data
 
@@ -92,7 +101,7 @@ class DocumentTab(gr.Interface):
             return None, gr.update(value=current_data)
 
         # If no file is provided, return the current state
-        return None, self.documents
+        return None, self.assistant.uploaded_files
 
     def _document_event_handler(self):
         """Set up the load button click event."""
