@@ -14,7 +14,7 @@ setup(
     packages=find_packages(include=["rag_assistant"]),
     entry_points={
         "console_scripts": [
-            "rag_assistant = rag_assistant.main",
+            "rag_assistant = rag_assistant.main:main",
         ]
     },
     include_package_data=True,
