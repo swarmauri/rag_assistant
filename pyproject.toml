@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rag_assistant"
-version = "0.2.3"
+version = "0.2.4"
 description = "This repository includes rag_assistant"
 authors = ["Jacob Stewart <jacob@swarmauri.com>"]
 license = "Apache-2.0"
@@ -17,7 +17,7 @@ classifiers = [
 python = ">=3.10,<4.0"
 gradio = "==5.1.0"
 swarmauri = "==0.5.0"
-fitz = "*"
+PyMuPDF = "*"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^7.0"  # Add flake8 as a development dependency
