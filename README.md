@@ -9,7 +9,7 @@ The Swarmauri Rag Assistant is your go-to tool for managing different configurat
 Getting started with Swarmauri’s RAG Assistant is straightforward. You can install it via pip by running the following command:
 
 ```bash
-pip install rag_assistant==0.1.19 --user
+pip install rag_assistant==0.2.0 --user
 ```
 
 ## Usage
@@ -18,121 +18,82 @@ Below is a comprehensive explanation of each argument you can provide to the Ass
 
 ### Required Arguments
 
-**--api_key**
+#### Generating config files
 
-- **Description**: Your API key.
-- **Type**: `str`
-- **Required**: Yes
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key
-    ```
+- For json config files
 
-### Optional Arguments
+```sh
+rag_assistant generate -o config.json
+```
 
-**--show_api_key**
+- For yaml config files
 
-- **Description**: Toggle displaying API key on the app.
-- **Type**: `bool`
-- **Default**: `False`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --show_api_key True
-    ```
+```sh
+rag_assistant generate -o config.yaml
+```
 
-**--provider_model**
+#### Launching app
 
-- **Description**: Your provider model.
-- **Type**: `str`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --provider_model your_provider_model
-    ```
+- To launch the app:
 
-**--show_provider_model**
+```sh
+rag_assistant launch --api_key $OPENAI_API_KEY --provider-llm openai
+```
 
-- **Description**: Toggle displaying the provider model on the app.
-- **Type**: `bool`
-- **Default**: `False`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --show_provider_model True
-    ```
+- *N/B: to see the currently supported LLMs do: `rag_assistant launch --help` under `--provider-llm`*
 
-**--system_context**
+#### For more help on `rag_assistant`:
 
-- **Description**: Assistant’s system context.
-- **Type**: `str`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --system_context "Your system context"
-    ```
+```sh
+rag_assistant --help
+```
 
-**--show_system_context**
+##### Example results
 
-- **Description**: Toggle displaying the system context on the app.
-- **Type**: `bool`
-- **Default**: `False`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --show_system_context True
-    ```
+```sh
+Swarmauri Developer Assistant
 
-**--documents_file_path**
+positional arguments:
+  {generate,launch}
+    generate         Generate a configuration file
+    launch           Launch the Gradio UI application
 
-- **Description**: Filepath of documents JSON.
-- **Type**: `str`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --documents_file_path "path/to/your/documents.json"
-    ```
+options:
+  -h, --help         show this help message and exit
+```
 
-**--show_documents_tab**
+#### For more help on `rag_assistant generate`
 
-- **Description**: Toggle displaying document tabs on the app.
-- **Type**: `bool`
-- **Default**: `False`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --show_documents_tab True
-    ```
+```sh
+rag_assistant generate --help
+```
+ 
+##### Example results
 
-**--db_path**
+```sh
+options:
+  -h, --help            show this help message and exit
+  -o OUTPUT, --output OUTPUT
+                        Output file path
+```
 
-- **Description**: Path to SQLite3 database.
-- **Type**: `str`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --db_path "path/to/your/db.sqlite3"
-    ```
+#### For more help on `rag_assistant launch`
 
-**--share**
+```sh
+rag_assistant launch --help
+```
 
-- **Description**: Deploy a live app on Gradio.
-- **Type**: `bool`
-- **Default**: `False`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --share True
-    ```
+##### Example result
 
-**--server_name**
-
-- **Description**: Server name.
-- **Type**: `str`
-- **Usage**:
-    ```bash
-    rag_assistant --api_key your_api_key --server_name "your_server_name"
-    ```
-
-## Example Usage
-
-Here is an example command that utilizes multiple arguments to launch the Assistant:
-
-```bash
-rag_assistant --api_key your_api_key --show_api_key True \
---provider_model your_provider_model --show_provider_model True \
---system_context "Development Environment" --show_system_context True \
---documents_file_path "path/to/your/documents.json" --show_documents_tab True \
---db_path "path/to/your/db.sqlite3" --share True --server_name "your_server_name"
+```sh
+options:
+  -h, --help            show this help message and exit
+  -api_key API_KEY, --api_key API_KEY
+                        Your API key
+  -provider_llm PROVIDER_LLM, --provider_llm PROVIDER_LLM
+                        Your provider LLM: openai | groq | mistral | gemini | anthropic
+  -provider_model PROVIDER_MODEL, --provider_model PROVIDER_MODEL
+                        Your provider model
+  -config_file CONFIG_FILE, --config_file CONFIG_FILE
+                        Path to config file
 ```
