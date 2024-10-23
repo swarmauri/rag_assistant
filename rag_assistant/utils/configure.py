@@ -1,13 +1,30 @@
 from rag_assistant.RagAssistant import RagAssistant
-from rag_assistant.utils.config_generator import (
-    generate_config_json,
-    generate_config_yaml,
-)
 import argparse
 from typing import Dict, Any
 import os
 import yaml
 import json
+import importlib.resources as pkg_resources
+
+
+def load_template():
+    """Load the JSON template from the 'template' folder."""
+    with pkg_resources.open_text("template", "config_template.json") as f:
+        return json.load(f)
+
+
+def generate_config_json(output_path):
+    """Generate a JSON config from the template."""
+    config_data = load_template()
+    with open(output_path, "w") as output_file:
+        json.dump(config_data, output_file, indent=4)
+
+
+def generate_config_yaml(output_path):
+    """Generate a YAML config from the template."""
+    config_data = load_template()
+    with open(output_path, "w") as output_file:
+        yaml.dump(config_data, output_file, default_flow_style=False)
 
 
 def parse_arguments() -> argparse.Namespace:
