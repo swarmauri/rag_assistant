@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rag_assistant"
-version = "0.2.1"
+version = "0.2.2"
 description = "This repository includes rag_assistant"
 authors = ["Jacob Stewart <jacob@swarmauri.com>"]
 license = "Apache-2.0"
