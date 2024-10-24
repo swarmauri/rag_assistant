@@ -1,10 +1,10 @@
-from rag_assistant.RagAssistant import RagAssistant
 import argparse
 from typing import Dict, Any
 import os
 import yaml
 import json
 import importlib.resources as pkg_resources
+from rag_assistant.RagAssistant import RagAssistant
 
 
 def load_template():
