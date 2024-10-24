@@ -2,9 +2,9 @@ from typing import Dict
 import gradio as gr
 
 from rag_assistant.RagAssistant import RagAssistant
-from gradio_tabs.chat_tab import ChatTab
-from gradio_tabs.document_tab import DocumentTab
-from gradio_tabs.document_edits_tab import DocumentEditsTab
+from rag_assistant.gradio_tabs.chat_tab import ChatTab
+from rag_assistant.gradio_tabs.document_tab import DocumentTab
+from rag_assistant.gradio_tabs.document_edits_tab import DocumentEditsTab
 
 
 class GradioUI:

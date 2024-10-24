@@ -1,5 +1,5 @@
 import argparse
-from gradio_ui import GradioUI
+from rag_assistant.gradio_ui import GradioUI
 from rag_assistant.utils.configure import (
     read_config_file,
     generate_config_json,
